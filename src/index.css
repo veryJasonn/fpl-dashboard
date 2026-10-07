@@ -1,0 +1,81 @@
+body {
+  margin: 0;
+  font-family: 'Maple Mono', ui-monospace, 'Segoe UI', monospace;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+#root {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 2.5rem 0 1rem;
+  color: #cbd5e1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #334155;
+  white-space: nowrap;
+}
+
+td:last-child {
+  font-weight: 700;
+}
+
+th.num, td.num {
+  width: 70px;
+  text-align: center;
+}
+
+th {
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+tr:hover td {
+  background: #1e293b;
+}
+
+.status {
+  padding: 2rem 0;
+  color: #94a3b8;
+}
+
+.status.error {
+  color: #f87171;
+}
+
+.chip-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  vertical-align: middle;
+}
