@@ -10,7 +10,7 @@ function cellStyle(value, { min, max }) {
   if (value == null || max === min) return undefined
   const t = (value - min) / (max - min)
   const hue = t * 120 // 0 = red, 120 = green
-  return { backgroundColor: `hsl(${hue}, 70%, 32%)`, color: '#fff' }
+  return { color: `hsl(${hue}, 85%, 55%)`, fontWeight: 700 }
 }
 
 function columnStats(values) {
@@ -46,10 +46,8 @@ export default function App() {
         const builtRows = entries.map((entry, i) => {
           const history = histories[i]
           const gwPoints = {}
-          const transfers = {}
           for (const gw of history.current ?? []) {
             gwPoints[gw.event] = gw.points
-            transfers[gw.event] = gw.event_transfers
             gwSet.add(gw.event)
           }
 
@@ -67,7 +65,6 @@ export default function App() {
             manager: entry.player_name,
             team: entry.entry_name,
             gwPoints,
-            transfers,
             chipsByEvent,
             chipsUsed,
             total: entry.total,
@@ -110,6 +107,15 @@ export default function App() {
       return { ...row, cumulative }
     })
   }, [rows, gameweeks])
+
+  const cumulativeGwStats = useMemo(() => {
+    if (!cumulativeRows) return {}
+    const stats = {}
+    for (const gw of gameweeks) {
+      stats[gw] = columnStats(cumulativeRows.map((r) => r.cumulative[gw]))
+    }
+    return stats
+  }, [cumulativeRows, gameweeks])
 
   return (
     <>
@@ -172,51 +178,11 @@ export default function App() {
                     <td>{row.manager}</td>
                     <td>{row.team}</td>
                     {gameweeks.map((gw) => (
-                      <td key={gw} className="num">{row.cumulative[gw] ?? '-'}</td>
+                      <td key={gw} className="num" style={cellStyle(row.cumulative[gw], cumulativeGwStats[gw])}>
+                        {row.cumulative[gw] ?? '-'}
+                      </td>
                     ))}
-                    <td className="num">{row.total}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      {rows && (
-        <>
-          <h2>Transfers &amp; Chips by Gameweek</h2>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Manager</th>
-                  <th>Team</th>
-                  {gameweeks.map((gw) => (
-                    <th key={gw} className="num">GW{gw}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.rank}</td>
-                    <td>{row.manager}</td>
-                    <td>{row.team}</td>
-                    {gameweeks.map((gw) => {
-                      const chip = row.chipsByEvent[gw]
-                      return (
-                        <td key={gw} className="num">
-                          {row.transfers[gw] ?? '-'}
-                          {chip && (
-                            <span className="chip-badge" style={{ backgroundColor: CHIP_COLORS[chip] ?? '#64748b' }}>
-                              {chip}
-                            </span>
-                          )}
-                        </td>
-                      )
-                    })}
+                    <td className="num" style={cellStyle(row.total, totalStats)}>{row.total}</td>
                   </tr>
                 ))}
               </tbody>
@@ -238,6 +204,7 @@ export default function App() {
                   {gameweeks.map((gw) => (
                     <th key={gw} className="num">GW{gw}</th>
                   ))}
+                  <th className="num"></th>
                 </tr>
               </thead>
               <tbody>
@@ -260,6 +227,7 @@ export default function App() {
                         </td>
                       )
                     })}
+                    <td className="num"></td>
                   </tr>
                 ))}
               </tbody>

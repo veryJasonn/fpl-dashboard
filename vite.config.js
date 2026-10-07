@@ -38,7 +38,8 @@ function fplApiDevPlugin() {
         }
 
         try {
-          const { default: handler } = await import(route.modulePath)
+          // Cache-bust so edits to api/*.js take effect without restarting the dev server.
+          const { default: handler } = await import(`${route.modulePath}?update=${Date.now()}`)
           await handler(req, res)
         } catch (err) {
           res.status(500).json({ error: 'Internal error' })

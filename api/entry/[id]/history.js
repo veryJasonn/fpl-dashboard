@@ -15,6 +15,9 @@ export default async function handler(req, res) {
     }
 
     const data = await fplRes.json()
+    // Cache at the edge so repeat page loads don't hit FPL directly, and keep
+    // serving the last good response for a day if FPL's API starts erroring.
+    res.setHeader('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600, stale-if-error=86400')
     res.status(200).json(data)
   } catch (err) {
     res.status(502).json({ error: 'Failed to reach FPL API' })
