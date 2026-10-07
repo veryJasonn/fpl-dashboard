@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import VarianceChart from './VarianceChart.jsx'
 
 const LEAGUE_ID = 1187651
 
@@ -235,6 +236,8 @@ export default function App() {
           </div>
         </>
       )}
+
+      {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} />}
     </>
   )
 }
