@@ -1,6 +1,16 @@
 import { useMemo, useRef, useState } from 'react'
 
-const SERIES_COLORS = ['#3987e5', '#d95926', '#199e70', '#eab308', '#a855f7', '#f97316', '#d55181', '#008300']
+// Keyed by manager so each person keeps their color and chart position
+// regardless of how the league standings reorder week to week.
+const MANAGER_COLORS = {
+  'Ben Wedd': '#3987e5',
+  'Ryan Croft': '#d95926',
+  'Jason Shao': '#199e70',
+  'Benji Klotz': '#c98500',
+  'vikram ahuja': '#a855f7',
+  'Ajay Mariswamy': '#E056FD',
+}
+const FALLBACK_COLORS = ['#d55181', '#008300', '#9085e9', '#e66767']
 
 const SURFACE = '#0f172a'
 const WIDTH = 760
@@ -31,10 +41,15 @@ export default function VarianceChart({ rows, gameweeks }) {
       return sum / rows.length
     })
 
-    const series = rows.map((row, i) => ({
+    // Alphabetical, not rank order, so each team's position stays fixed
+    // regardless of how the standings shuffle week to week.
+    const sortedRows = [...rows].sort((a, b) => a.manager.localeCompare(b.manager, undefined, { sensitivity: 'base' }))
+
+    let fallbackIdx = 0
+    const series = sortedRows.map((row) => ({
       id: row.id,
       manager: row.manager,
-      color: SERIES_COLORS[i % SERIES_COLORS.length],
+      color: MANAGER_COLORS[row.manager] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length],
       values: gameweeks.map((gw, gi) => (row.cumulative[gw] ?? 0) - avgByGw[gi]),
     }))
 
