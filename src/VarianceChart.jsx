@@ -3,30 +3,27 @@ import { useMemo, useRef, useState } from 'react'
 // Keyed by manager so each person keeps their color and chart position
 // regardless of how the league standings reorder week to week.
 const MANAGER_COLORS = {
-  'Ben Wedd': '#3987e5',
-  'Ryan Croft': '#d95926',
-  'Jason Shao': '#199e70',
-  'Benji Klotz': '#c98500',
-  'vikram ahuja': '#a855f7',
-  'Ajay Mariswamy': '#E056FD',
+  'Ben Wedd': '#DC2626',
+  'Ryan Croft': '#F97316',
+  'Jason Shao': '#FACC15',
+  'Benji Klotz': '#3B82F6',
+  'vikram ahuja': '#9333EA',
+  'Ajay Mariswamy': '#0DC9B0',
 }
 const FALLBACK_COLORS = ['#d55181', '#008300', '#9085e9', '#e66767']
 
 const SURFACE = '#0f172a'
 const WIDTH = 760
-const HEIGHT = 360
+const HEIGHT = 300
 const PAD = { top: 24, right: 24, bottom: 36, left: 52 }
 const PLOT_W = WIDTH - PAD.left - PAD.right
 const PLOT_H = HEIGHT - PAD.top - PAD.bottom
 
-function niceStep(maxAbs) {
-  const rough = maxAbs / 4 || 1
-  const mag = 10 ** Math.floor(Math.log10(rough))
-  const norm = rough / mag
-  if (norm < 1.5) return 1 * mag
-  if (norm < 3.5) return 2 * mag
-  if (norm < 7.5) return 5 * mag
-  return 10 * mag
+// Gridlines always land on a clean step (5 / 10 / 15 / 20), escalating only
+// once the current step would need more than 8 ticks per side.
+const STEP_OPTIONS = [5, 10, 15, 20]
+function pickStep(maxAbs) {
+  return STEP_OPTIONS.find((step) => maxAbs / step <= 8) ?? STEP_OPTIONS[STEP_OPTIONS.length - 1]
 }
 
 export default function VarianceChart({ rows, gameweeks }) {
@@ -54,7 +51,7 @@ export default function VarianceChart({ rows, gameweeks }) {
     }))
 
     const maxAbs = Math.max(1, ...series.flatMap((s) => s.values.map((v) => Math.abs(v))))
-    const step = niceStep(maxAbs)
+    const step = pickStep(maxAbs)
     const bound = Math.ceil(maxAbs / step) * step
     const yTicks = []
     for (let v = -bound; v <= bound + 1e-9; v += step) yTicks.push(Math.round(v))

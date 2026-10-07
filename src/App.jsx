@@ -120,40 +120,43 @@ export default function App() {
 
   return (
     <>
-      <h1>{leagueName || 'FPL Mini-League'} Gameweek Scores</h1>
+      <h1>{leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
       {error && <p className="status error">Failed to load data: {error}</p>}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}
       {rows && (
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Manager</th>
-                <th>Team</th>
-                {gameweeks.map((gw) => (
-                  <th key={gw} className="num">GW{gw}</th>
-                ))}
-                <th className="num">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.rank}</td>
-                  <td>{row.manager}</td>
-                  <td>{row.team}</td>
+        <>
+          <h2>Gameweek Scores</h2>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  <th>Team</th>
                   {gameweeks.map((gw) => (
-                    <td key={gw} className="num" style={cellStyle(row.gwPoints[gw], gwStats[gw])}>
-                      {row.gwPoints[gw] ?? '-'}
-                    </td>
+                    <th key={gw} className="num">GW{gw}</th>
                   ))}
-                  <td className="num" style={cellStyle(row.total, totalStats)}>{row.total}</td>
+                  <th className="num">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.rank}</td>
+                    <td>{row.manager}</td>
+                    <td>{row.team}</td>
+                    {gameweeks.map((gw) => (
+                      <td key={gw} className="num" style={cellStyle(row.gwPoints[gw], gwStats[gw])}>
+                        {row.gwPoints[gw] ?? '-'}
+                      </td>
+                    ))}
+                    <td className="num" style={cellStyle(row.total, totalStats)}>{row.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {cumulativeRows && (
