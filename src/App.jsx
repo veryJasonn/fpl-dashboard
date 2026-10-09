@@ -162,7 +162,9 @@ export default function App() {
       <h1>{base?.leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
       <h2>Gameweek {summary.gameweek} Recap</h2>
       {summary.paragraphs.map((text) => (
-        <p key={text} className="recap">{text}</p>
+        <p key={text} className="recap">
+          {text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
+        </p>
       ))}
       {error && <p className="status error">Failed to load data: {error}</p>}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}

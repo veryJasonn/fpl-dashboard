@@ -18,6 +18,7 @@ const name = new Map(bootstrap.elements.map((e) => [e.id, e.web_name]))
 const pts = new Map(live.elements.map((e) => [e.id, e.stats.total_points]))
 
 const rows = []
+const squads = []
 for (const e of standings.standings.results) {
   const [hist, picks] = await Promise.all([get(`/entry/${e.entry}/history/`), get(`/entry/${e.entry}/event/${GW}/picks/`)])
   const net = (g) => g.points - g.event_transfers_cost
@@ -26,6 +27,11 @@ for (const e of standings.standings.results) {
   const xi = picks.picks.filter((p) => p.multiplier > 0)
   const best = [...xi].sort((a, b) => pts.get(b.element) * b.multiplier - pts.get(a.element) * a.multiplier)[0]
   const g = hist.current.find((x) => x.event === GW)
+  squads.push({
+    manager: e.player_name,
+    xi: xi.map((p) => ({ element: p.element, name: name.get(p.element), points: pts.get(p.element), multiplier: p.multiplier })),
+    bench: picks.picks.filter((p) => p.multiplier === 0).map((p) => ({ name: name.get(p.element), points: pts.get(p.element) })),
+  })
   rows.push({
     manager: e.player_name,
     team: e.entry_name,
@@ -52,4 +58,15 @@ for (const r of rows) {
   r.rankAfter = after[r.manager]
 }
 
-console.log(JSON.stringify({ gameweek: GW, leagueAverage: +average.toFixed(1), rows: rows.sort((a, b) => a.rankAfter - b.rankAfter) }, null, 2))
+// Which managers counted each player in their scoring XI: separates shared picks from differentials.
+const owners = new Map()
+for (const s of squads) for (const p of s.xi) owners.set(p.element, [...(owners.get(p.element) ?? []), s.manager])
+const players = squads.map((s) => ({
+  manager: s.manager,
+  scoringXI: s.xi
+    .map((p) => ({ name: p.name, points: p.points, multiplier: p.multiplier, counted: p.points * p.multiplier, countedByManagers: owners.get(p.element).length }))
+    .sort((a, b) => b.counted - a.counted),
+  benchLeftOut: s.bench,
+}))
+
+console.log(JSON.stringify({ gameweek: GW, leagueAverage: +average.toFixed(1), rows: rows.sort((a, b) => a.rankAfter - b.rankAfter), players }, null, 2))

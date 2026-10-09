@@ -35,6 +35,11 @@ h2 {
   color: #cbd5e1;
 }
 
+.recap strong {
+  color: #fff;
+  font-weight: 700;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
