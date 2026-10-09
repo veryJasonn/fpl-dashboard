@@ -53,9 +53,11 @@ export default function App() {
         const builtRows = entries.map((entry, i) => {
           const history = histories[i]
           const gwPoints = {}
+          const transfers = {}
           for (const gw of history.current ?? []) {
             // FPL's `points` is before transfer hits; its running totals are after them.
             gwPoints[gw.event] = gw.points - gw.event_transfers_cost
+            transfers[gw.event] = gw.event_transfers
             gwSet.add(gw.event)
           }
 
@@ -73,6 +75,7 @@ export default function App() {
             manager: entry.player_name,
             team: entry.entry_name,
             gwPoints,
+            transfers,
             chipsByEvent,
             chipsUsed,
             total: entry.total,
@@ -291,6 +294,44 @@ export default function App() {
               </tbody>
             </table>
           </div>
+        </>
+      )}
+
+      {rows && (
+        <>
+          <h2>Transfers Made</h2>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  <th>Team</th>
+                  {gameweeks.map((gw) => (
+                    <th key={gw} className="num">
+                      GW{gw}
+                      {gw === liveGw && <LiveDot />}
+                    </th>
+                  ))}
+                  <th className="num"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.rank}</td>
+                    <td>{row.manager}</td>
+                    <td>{row.team}</td>
+                    {gameweeks.map((gw) => (
+                      <td key={gw} className="num">{row.transfers[gw] ?? '-'}</td>
+                    ))}
+                    <td className="num"></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="table-note">* Transfers are shown as 0 in any gameweek where the WC chip is used.</p>
         </>
       )}
 

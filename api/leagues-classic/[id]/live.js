@@ -134,7 +134,7 @@ export default async function handler(req, res) {
           transfersCost: data.entry_history.event_transfers_cost,
           info,
         })
-        entries[entryId] = { points, chip: data.active_chip }
+        entries[entryId] = { points, chip: data.active_chip, transfers: data.entry_history.event_transfers }
       }),
     )
 

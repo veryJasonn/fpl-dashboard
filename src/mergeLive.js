@@ -18,8 +18,9 @@ export function mergeLive(base, live) {
     if (entry.chip && chipsByEvent[liveEvent] === undefined) {
       chipsByEvent[liveEvent] = CHIP_CODES[entry.chip] ?? entry.chip.toUpperCase()
     }
+    const transfers = { ...row.transfers, [liveEvent]: entry.transfers }
     const total = Object.values(gwPoints).reduce((sum, p) => sum + p, 0)
-    return { ...row, gwPoints, chipsByEvent, total }
+    return { ...row, gwPoints, chipsByEvent, transfers, total }
   })
 
   let rows = merged
