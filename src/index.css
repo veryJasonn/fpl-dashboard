@@ -81,6 +81,33 @@ tr:hover td {
   vertical-align: middle;
 }
 
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  vertical-align: middle;
+  animation: live-flash 1.2s ease-in-out infinite;
+}
+
+.live-dot-svg {
+  fill: #22c55e;
+  filter: drop-shadow(0 0 3px #22c55e);
+  animation: live-flash 1.2s ease-in-out infinite;
+}
+
+@keyframes live-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .live-dot-svg { animation: none; }
+}
+
 .chart-wrap {
   position: relative;
   margin-top: 0.5rem;

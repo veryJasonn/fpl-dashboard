@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import LiveDot from './LiveDot.jsx'
 
 // Keyed by manager so each person keeps their color and chart position
 // regardless of how the league standings reorder week to week.
@@ -26,7 +27,10 @@ function pickStep(maxAbs) {
   return STEP_OPTIONS.find((step) => maxAbs / step <= 8) ?? STEP_OPTIONS[STEP_OPTIONS.length - 1]
 }
 
-export default function VarianceChart({ rows, gameweeks }) {
+const AXIS_LABEL_Y = HEIGHT - PAD.bottom + 20
+const AXIS_CHAR_W = 6.6
+
+export default function VarianceChart({ rows, gameweeks, liveGw }) {
   const svgRef = useRef(null)
   const [hoverIdx, setHoverIdx] = useState(null)
 
@@ -110,9 +114,19 @@ export default function VarianceChart({ rows, gameweeks }) {
           ))}
 
           {gameweeks.map((gw, i) => (
-            <text key={gw} x={xForIndex(i)} y={HEIGHT - PAD.bottom + 20} className="chart-axis-label" textAnchor="middle">
-              GW{gw}
-            </text>
+            <g key={gw}>
+              <text x={xForIndex(i)} y={AXIS_LABEL_Y} className="chart-axis-label" textAnchor="middle">
+                GW{gw}
+              </text>
+              {gw === liveGw && (
+                <circle
+                  className="live-dot-svg"
+                  cx={xForIndex(i) + (`GW${gw}`.length * AXIS_CHAR_W) / 2 + 6}
+                  cy={AXIS_LABEL_Y - 4}
+                  r="3"
+                />
+              )}
+            </g>
           ))}
 
           {series.map((s) => (
@@ -138,7 +152,10 @@ export default function VarianceChart({ rows, gameweeks }) {
 
         {hoverIdx != null && (
           <div className="chart-tooltip" style={anchorLeft ? { left: `${hoverPct}%` } : { right: `${100 - hoverPct}%` }}>
-            <div className="chart-tooltip-header">GW{gameweeks[hoverIdx]}</div>
+            <div className="chart-tooltip-header">
+              GW{gameweeks[hoverIdx]}
+              {gameweeks[hoverIdx] === liveGw && <LiveDot />}
+            </div>
             {tooltipRows.map((s) => (
               <div key={s.id} className="chart-tooltip-row">
                 <span className="chart-tooltip-key" style={{ backgroundColor: s.color }} />

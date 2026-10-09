@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
+import LiveDot from './LiveDot.jsx'
+import { CHIP_CODES, mergeLive } from './mergeLive.js'
 
 const LEAGUE_ID = 1187651
 
-const CHIP_CODES = { wildcard: 'WC', freehit: 'FH', '3xc': 'TC', bboost: 'BB' }
+const LIVE_POLL_MS = 60_000
+const IDLE_POLL_MS = 300_000
+// ?forceEvent=5 previews live mode on a finished gameweek (ignored by the server in production).
+const forcedEvent = new URLSearchParams(window.location.search).get('forceEvent')
+const LIVE_URL = `/api/leagues-classic/${LEAGUE_ID}/live${forcedEvent ? `?forceEvent=${encodeURIComponent(forcedEvent)}` : ''}`
+
 const CHIP_COLORS = { WC: '#0ea5e9', FH: '#f97316', TC: '#a855f7', BB: '#22c55e' }
 
 // Green (highest in column) fading to red (lowest in column).
@@ -20,9 +27,8 @@ function columnStats(values) {
 }
 
 export default function App() {
-  const [rows, setRows] = useState(null)
-  const [gameweeks, setGameweeks] = useState([])
-  const [leagueName, setLeagueName] = useState('')
+  const [base, setBase] = useState(null)
+  const [live, setLive] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -31,7 +37,6 @@ export default function App() {
         const standingsRes = await fetch(`/api/leagues-classic/${LEAGUE_ID}/standings`)
         if (!standingsRes.ok) throw new Error(`Standings request failed: ${standingsRes.status}`)
         const standingsData = await standingsRes.json()
-        setLeagueName(standingsData.league?.name ?? '')
         const entries = standingsData.standings?.results ?? []
 
         const histories = await Promise.all(
@@ -48,7 +53,8 @@ export default function App() {
           const history = histories[i]
           const gwPoints = {}
           for (const gw of history.current ?? []) {
-            gwPoints[gw.event] = gw.points
+            // FPL's `points` is before transfer hits; its running totals are after them.
+            gwPoints[gw.event] = gw.points - gw.event_transfers_cost
             gwSet.add(gw.event)
           }
 
@@ -72,8 +78,11 @@ export default function App() {
           }
         })
 
-        setGameweeks([...gwSet].sort((a, b) => a - b))
-        setRows(builtRows)
+        setBase({
+          leagueName: standingsData.league?.name ?? '',
+          gameweeks: [...gwSet],
+          rows: builtRows,
+        })
       } catch (err) {
         setError(err.message)
       }
@@ -81,6 +90,35 @@ export default function App() {
 
     load()
   }, [])
+
+  const isLive = Boolean(live?.live)
+  useEffect(() => {
+    let cancelled = false
+    async function loadLive() {
+      try {
+        const res = await fetch(LIVE_URL)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setLive(data)
+      } catch {
+        // Live scores are optional; the page works without them.
+      }
+    }
+
+    loadLive()
+    const timer = setInterval(() => {
+      if (!document.hidden) loadLive()
+    }, isLive ? LIVE_POLL_MS : IDLE_POLL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [isLive])
+
+  const { rows, gameweeks, liveGw } = useMemo(
+    () => (base ? mergeLive(base, live) : { rows: null, gameweeks: [], liveGw: null }),
+    [base, live],
+  )
 
   const gwStats = useMemo(() => {
     if (!rows) return {}
@@ -120,7 +158,7 @@ export default function App() {
 
   return (
     <>
-      <h1>{leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
+      <h1>{base?.leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
       {error && <p className="status error">Failed to load data: {error}</p>}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}
       {rows && (
@@ -134,7 +172,10 @@ export default function App() {
                   <th>Manager</th>
                   <th>Team</th>
                   {gameweeks.map((gw) => (
-                    <th key={gw} className="num">GW{gw}</th>
+                    <th key={gw} className="num">
+                      GW{gw}
+                      {gw === liveGw && <LiveDot />}
+                    </th>
                   ))}
                   <th className="num">Total</th>
                 </tr>
@@ -170,7 +211,10 @@ export default function App() {
                   <th>Manager</th>
                   <th>Team</th>
                   {gameweeks.map((gw) => (
-                    <th key={gw} className="num">GW{gw}</th>
+                    <th key={gw} className="num">
+                      GW{gw}
+                      {gw === liveGw && <LiveDot />}
+                    </th>
                   ))}
                   <th className="num">Total</th>
                 </tr>
@@ -206,7 +250,10 @@ export default function App() {
                   <th>Manager</th>
                   <th>Team</th>
                   {gameweeks.map((gw) => (
-                    <th key={gw} className="num">GW{gw}</th>
+                    <th key={gw} className="num">
+                      GW{gw}
+                      {gw === liveGw && <LiveDot />}
+                    </th>
                   ))}
                   <th className="num"></th>
                 </tr>
@@ -240,7 +287,7 @@ export default function App() {
         </>
       )}
 
-      {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} />}
+      {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} liveGw={liveGw} />}
     </>
   )
 }

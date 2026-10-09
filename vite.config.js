@@ -11,6 +11,10 @@ function fplApiDevPlugin() {
       modulePath: './api/leagues-classic/[id]/standings.js',
     },
     {
+      pattern: /^\/api\/leagues-classic\/(\d+)\/live\/?$/,
+      modulePath: './api/leagues-classic/[id]/live.js',
+    },
+    {
       pattern: /^\/api\/entry\/(\d+)\/history\/?$/,
       modulePath: './api/entry/[id]/history.js',
     },
@@ -27,7 +31,7 @@ function fplApiDevPlugin() {
           return
         }
 
-        req.query = { id: url.pathname.match(route.pattern)[1] }
+        req.query = { ...Object.fromEntries(url.searchParams), id: url.pathname.match(route.pattern)[1] }
         res.status = (code) => {
           res.statusCode = code
           return res
