@@ -160,9 +160,21 @@ export default function App() {
     return stats
   }, [cumulativeRows, gameweeks])
 
+  const title = `${base?.leagueName || 'FPL Mini-League'} Fantasy Premier League`
+
   return (
     <>
-      <h1>{base?.leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
+      <h1 className="marquee" aria-label={title}>
+        <span className="marquee-track" aria-hidden="true">
+          {[0, 1].map((group) => (
+            <span key={group} className="marquee-group">
+              {[0, 1, 2].map((copy) => (
+                <span key={copy} className="marquee-item">{title}</span>
+              ))}
+            </span>
+          ))}
+        </span>
+      </h1>
       <h2>Gameweek {summary.gameweek} Recap</h2>
       {summary.paragraphs.map((text) => (
         <p key={text} className="recap">

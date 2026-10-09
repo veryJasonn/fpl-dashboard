@@ -16,10 +16,41 @@ body {
 }
 
 h1 {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 400;
+  color: #c3a6f7;
   margin-bottom: 1rem;
   text-align: center;
+}
+
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 40s linear infinite;
+}
+
+.marquee-group {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.marquee-item {
+  padding-right: 60px;
+}
+
+@keyframes marquee-scroll {
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; width: auto; display: block; }
+  .marquee-group:nth-child(n + 2), .marquee-item:nth-child(n + 2) { display: none; }
+  .marquee-item { padding-right: 0; }
 }
 
 h2 {
