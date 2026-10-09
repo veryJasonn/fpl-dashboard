@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
 import LiveDot from './LiveDot.jsx'
 import { CHIP_CODES, mergeLive } from './mergeLive.js'
+import summary from './summary.json'
 
 const LEAGUE_ID = 1187651
 
@@ -159,6 +160,10 @@ export default function App() {
   return (
     <>
       <h1>{base?.leagueName || 'FPL Mini-League'} Fantasy Premier League</h1>
+      <h2>Gameweek {summary.gameweek} Recap</h2>
+      {summary.paragraphs.map((text) => (
+        <p key={text} className="recap">{text}</p>
+      ))}
       {error && <p className="status error">Failed to load data: {error}</p>}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}
       {rows && (
