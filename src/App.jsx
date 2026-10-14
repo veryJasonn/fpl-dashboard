@@ -17,6 +17,12 @@ import summary from './summary.json'
 
 const LEAGUE_ID = 1187651
 
+const TABLE_TABS = [
+  ['cumulative', 'Cumulative Scores'],
+  ['chips', 'Chips Used'],
+  ['transfers', 'Transfers Made'],
+]
+
 const LIVE_POLL_MS = 60_000
 const IDLE_POLL_MS = 300_000
 // ?forceEvent=5 previews live mode on a finished gameweek (ignored by the server in production).
@@ -42,6 +48,7 @@ export default function App() {
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState(null)
   const [recapGw, setRecapGw] = useState(null)
+  const [tableTab, setTableTab] = useState('cumulative')
 
   useEffect(() => {
     fetch('/api/meta')
@@ -264,9 +271,24 @@ export default function App() {
         </>
       )}
 
-      {cumulativeRows && (
+      {rows && (
+        <div className="gw-picker table-tabs" role="group" aria-label="Choose a table">
+          {TABLE_TABS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className={`gw-pill${key === tableTab ? ' gw-pill-active' : ''}`}
+              aria-pressed={key === tableTab}
+              onClick={() => setTableTab(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {cumulativeRows && tableTab === 'cumulative' && (
         <>
-          <h2>Cumulative Scores</h2>
           <div className="table-scroll">
             <table>
               <thead>
@@ -301,9 +323,8 @@ export default function App() {
         </>
       )}
 
-      {rows && (
+      {rows && tableTab === 'chips' && (
         <>
-          <h2>Chips Used</h2>
           <div className="table-scroll">
             <table>
               <thead>
@@ -347,9 +368,8 @@ export default function App() {
         </>
       )}
 
-      {rows && (
+      {rows && tableTab === 'transfers' && (
         <>
-          <h2>Transfers Made</h2>
           <div className="table-scroll">
             <table>
               <thead>

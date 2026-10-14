@@ -117,6 +117,11 @@ h2 {
   font-weight: 700;
 }
 
+.table-tabs {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
 .countdown {
   display: flex;
   flex-wrap: wrap;
