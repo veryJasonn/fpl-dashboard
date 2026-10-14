@@ -11,6 +11,10 @@ function fplApiDevPlugin() {
       modulePath: './api/leagues-classic/[id]/standings.js',
     },
     {
+      pattern: /^\/api\/meta\/?$/,
+      modulePath: './api/meta.js',
+    },
+    {
       pattern: /^\/api\/leagues-classic\/(\d+)\/live\/?$/,
       modulePath: './api/leagues-classic/[id]/live.js',
     },

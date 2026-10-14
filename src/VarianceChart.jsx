@@ -1,17 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import LiveDot from './LiveDot.jsx'
-
-// Keyed by manager so each person keeps their color and chart position
-// regardless of how the league standings reorder week to week.
-const MANAGER_COLORS = {
-  'Ben Wedd': '#DC2626',
-  'Ryan Croft': '#F97316',
-  'Jason Shao': '#FACC15',
-  'Benji Klotz': '#3B82F6',
-  'vikram ahuja': '#9333EA',
-  'Ajay Mariswamy': '#0DC9B0',
-}
-const FALLBACK_COLORS = ['#d55181', '#008300', '#9085e9', '#e66767']
+import { buildColorMap, byManagerName } from './managers.js'
 
 const SURFACE = '#0f172a'
 const WIDTH = 760
@@ -44,13 +33,13 @@ export default function VarianceChart({ rows, gameweeks, liveGw }) {
 
     // Alphabetical, not rank order, so each team's position stays fixed
     // regardless of how the standings shuffle week to week.
-    const sortedRows = [...rows].sort((a, b) => a.manager.localeCompare(b.manager, undefined, { sensitivity: 'base' }))
+    const sortedRows = [...rows].sort(byManagerName)
 
-    let fallbackIdx = 0
+    const colors = buildColorMap(rows)
     const series = sortedRows.map((row) => ({
       id: row.id,
       manager: row.manager,
-      color: MANAGER_COLORS[row.manager] ?? FALLBACK_COLORS[fallbackIdx++ % FALLBACK_COLORS.length],
+      color: colors.get(row.manager),
       values: gameweeks.map((gw, gi) => (row.cumulative[gw] ?? 0) - avgByGw[gi]),
     }))
 
@@ -90,6 +79,7 @@ export default function VarianceChart({ rows, gameweeks, liveGw }) {
   return (
     <>
       <h2>Cumulative Score vs League Average</h2>
+      <div className="chart-scroll">
       <div className="chart-wrap">
         <svg
           ref={svgRef}
@@ -168,6 +158,7 @@ export default function VarianceChart({ rows, gameweeks, liveGw }) {
             ))}
           </div>
         )}
+      </div>
       </div>
 
       <ul className="chart-legend">

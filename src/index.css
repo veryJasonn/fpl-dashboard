@@ -26,6 +26,22 @@ h1 {
 .marquee {
   overflow: hidden;
   white-space: nowrap;
+  /* Room for the hover glow to spread without being clipped; margins cancel it out so layout is unchanged. */
+  padding-block: 0.8rem;
+  margin-block: calc(0.67em - 0.8rem) calc(1rem - 0.8rem);
+}
+
+.marquee-item {
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.marquee:hover .marquee-item {
+  color: #f5ecff;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 12px #d8b4fe,
+    0 0 24px #a855f7,
+    0 0 44px #a855f7;
 }
 
 .marquee-track {
@@ -64,6 +80,533 @@ h2 {
   line-height: 1.7;
   font-size: 0.9rem;
   color: #cbd5e1;
+}
+
+.gw-picker {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.gw-pill {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.gw-pill:hover {
+  border-color: #c3a6f7;
+}
+
+.gw-pill:focus-visible {
+  outline: 2px solid #c3a6f7;
+  outline-offset: 2px;
+}
+
+.gw-pill-active {
+  border-color: #c3a6f7;
+  background: #c3a6f7;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.countdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem 0.9rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.countdown strong {
+  color: #c3a6f7;
+  font-size: 1.05rem;
+}
+
+.countdown-date {
+  font-size: 0.7rem;
+}
+
+.mgr-dot {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  vertical-align: baseline;
+}
+
+.move {
+  margin-left: 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.move-up {
+  color: #4ade80;
+}
+
+.move-down {
+  color: #f87171;
+}
+
+.award-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.award-card {
+  padding: 0.7rem 0.85rem;
+  background: #131c31;
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.award-card p {
+  margin: 0;
+}
+
+.award-title {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.award-value {
+  margin: 0.25rem 0 0.35rem !important;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.award-winner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: 0.8rem;
+}
+
+.award-note {
+  margin-left: 0.4rem;
+  color: #64748b;
+  font-size: 0.65rem;
+}
+
+table.ownership td:first-child,
+table.season td:first-child {
+  font-weight: 400;
+}
+
+table.ownership td:last-child,
+table.season td:last-child {
+  font-weight: 400;
+}
+
+.owner-dots {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  vertical-align: middle;
+}
+
+.owner-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--dot);
+  border: 2px solid var(--dot);
+  box-sizing: border-box;
+}
+
+.owner-dot-bench {
+  background: transparent;
+}
+
+.tag-diff {
+  margin-left: 0.6rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: #1e293b;
+  color: #c3a6f7;
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+}
+
+.ownership-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ownership-foot .gw-pill {
+  margin-top: 0.6rem;
+}
+
+.chip-row {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.chip-row .chip-badge {
+  margin-left: 0;
+}
+
+.chip-used {
+  background: #1e293b;
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.sparkline {
+  width: 96px;
+  height: 26px;
+  vertical-align: middle;
+}
+
+.potl-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.1rem;
+  background: linear-gradient(135deg, #2a1f4d, #131c31);
+  border: 1px solid #5b3fa8;
+  border-radius: 10px;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.18);
+}
+
+.potl-crown {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: #c3a6f7;
+  color: #1a1033;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.potl-hero > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.potl-name {
+  margin: 0;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.potl-sub {
+  margin: 0.2rem 0 0;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+}
+
+/* Score tables: Rank and Manager (with the team name beneath) are pinned left and the last column
+   (Total) is pinned right, so only the gameweek columns in the middle scroll sideways. */
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(-n + 2),
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):last-child {
+  position: sticky;
+  z-index: 1;
+  box-sizing: border-box;
+  background: #0f172a;
+}
+
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(1) {
+  left: 0;
+  width: 4.5rem;
+  min-width: 4.5rem;
+}
+
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(2) {
+  left: 4.5rem;
+  width: 13rem;
+  min-width: 13rem;
+  max-width: 13rem;
+  box-shadow: 2px 0 0 #334155;
+}
+
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):last-child {
+  right: 0;
+  box-shadow: -2px 0 0 #334155;
+}
+
+.mgr-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.mgr-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mgr-team {
+  overflow: hidden;
+  padding-left: 1.1rem;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  #root {
+    padding: 1.25rem 0.75rem;
+  }
+
+  /* Keep the chart readable: scroll it sideways instead of shrinking the text. */
+  .chart-scroll {
+    overflow-x: auto;
+  }
+
+  .chart-scroll .chart-wrap {
+    min-width: 560px;
+  }
+
+  th,
+  td {
+    padding: 0.45rem 0.35rem;
+  }
+
+  th.num,
+  td.num {
+    width: 52px;
+    min-width: 52px;
+  }
+
+  /* Score tables: narrower pinned columns on phones. */
+  .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(1) {
+    width: 3.4rem;
+    min-width: 3.4rem;
+  }
+
+  .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(2) {
+    left: 3.4rem;
+    width: 9.5rem;
+    min-width: 9.5rem;
+    max-width: 9.5rem;
+  }
+
+  table.season th:first-child,
+  table.season td:first-child,
+  table.ownership th:first-child,
+  table.ownership td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #0f172a;
+  }
+
+  .potl-hero {
+    flex-wrap: wrap;
+  }
+
+  /* Gameweek buttons: one sideways-scrolling row instead of wrapping onto many lines. */
+  .gw-picker {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.4rem;
+    scrollbar-width: thin;
+  }
+
+  .gw-pill {
+    flex-shrink: 0;
+  }
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.team-card {
+  background: #131c31;
+  border: 1px solid #334155;
+  border-top-width: 3px;
+  border-radius: 8px;
+  padding: 0.75rem 1rem 0.9rem;
+}
+
+.team-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid #334155;
+}
+
+.team-rank {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #c3a6f7;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.team-names {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.team-names strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.team-names span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-score {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.team-score small {
+  margin-left: 0.2rem;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 400;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.player {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.18rem 0;
+  font-size: 0.8rem;
+}
+
+.player-bench {
+  opacity: 0.55;
+}
+
+.player-pos {
+  color: #64748b;
+  font-size: 0.65rem;
+}
+
+.player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  background: #facc15;
+  color: #0f172a;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.player-badge-vice {
+  background: #94a3b8;
+}
+
+.player-sub {
+  margin-left: 0.35rem;
+  font-weight: 700;
+}
+
+.player-sub-in {
+  color: #4ade80;
+}
+
+.player-sub-out {
+  color: #f87171;
+}
+
+.player-pts {
+  min-width: 2.2rem;
+  text-align: right;
+  font-weight: 700;
+}
+
+.player-mult {
+  margin-right: 0.4rem;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 400;
+}
+
+.pts-hi {
+  color: #4ade80;
+}
+
+.pts-neg {
+  color: #f87171;
+}
+
+.pts-zero {
+  color: #64748b;
+}
+
+.bench-label {
+  margin: 0.6rem 0 0.2rem;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.team-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.7rem;
+  color: #f87171;
+}
+
+.team-foot .chip-badge {
+  margin-left: 0;
 }
 
 .table-note {

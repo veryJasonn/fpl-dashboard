@@ -62,7 +62,16 @@ export function computeEntryPoints({ picks, activeChip, transfersCost, info }) {
     0,
   )
 
-  return { points: gross - transfersCost, gross, subs }
+  const inXi = new Set(counted.map((p) => p.element))
+  return {
+    points: gross - transfersCost,
+    gross,
+    subs,
+    xi: counted,
+    bench: squad.filter((p) => !inXi.has(p.element)),
+    armband,
+    capMult,
+  }
 }
 
 export default async function handler(req, res) {
@@ -78,14 +87,25 @@ export default async function handler(req, res) {
 
     // Only honoured outside production, to preview live mode on a finished gameweek.
     const forced = process.env.NODE_ENV !== 'production' ? Number(req.query.forceEvent) : NaN
+    // Defaults to the current gameweek; ?event=N returns the squads for any gameweek already started.
     const current = bootstrap.events.find((e) => e.is_current)
+    const requested = Number(req.query.event)
     const event = Number.isInteger(forced)
       ? bootstrap.events.find((e) => e.id === forced)
-      : current && !current.data_checked
-        ? current
-        : null
+      : Number.isInteger(requested) && current && requested >= 1 && requested <= current.id
+        ? bootstrap.events.find((e) => e.id === requested)
+        : current
+    const live = Number.isInteger(forced) ? true : Boolean(event && !event.finished)
+    const isPast = Boolean(event && current && event.id < current.id)
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=60, stale-if-error=3600')
+    res.setHeader(
+      'Cache-Control',
+      live
+        ? 'public, s-maxage=60, stale-while-revalidate=60, stale-if-error=3600'
+        : isPast
+          ? 'public, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=86400'
+          : 'public, s-maxage=600, stale-while-revalidate=600, stale-if-error=3600',
+    )
 
     if (!event) {
       res.status(200).json({ event: null, live: false, entries: {} })
@@ -100,6 +120,7 @@ export default async function handler(req, res) {
 
     const liveById = new Map(liveData.elements.map((el) => [el.id, el.stats]))
     const teamOfElement = new Map(bootstrap.elements.map((el) => [el.id, el.team]))
+    const nameOfElement = new Map(bootstrap.elements.map((el) => [el.id, el.web_name]))
     const teamDone = new Map(bootstrap.teams.map((t) => [t.id, true]))
     for (const f of fixtures) {
       if (!(f.finished || f.finished_provisional)) {
@@ -128,17 +149,47 @@ export default async function handler(req, res) {
           if (err.status === 404) return
           throw err
         }
-        const { points } = computeEntryPoints({
+        const result = computeEntryPoints({
           picks: data.picks,
           activeChip: data.active_chip,
           transfersCost: data.entry_history.event_transfers_cost,
           info,
         })
-        entries[entryId] = { points, chip: data.active_chip, transfers: data.entry_history.event_transfers }
+
+        // Once FPL has processed the gameweek it has already applied the subs to the picks.
+        const subs = result.subs.length
+          ? result.subs
+          : (data.automatic_subs ?? []).map((s) => ({ in: s.element_in, out: s.element_out }))
+        const subbedIn = new Set(subs.map((s) => s.in))
+        const subbedOut = new Set(subs.map((s) => s.out))
+        const player = (p, counted) => ({
+          id: p.element,
+          name: nameOfElement.get(p.element) ?? `#${p.element}`,
+          type: p.element_type,
+          points: liveById.get(p.element)?.total_points ?? 0,
+          minutes: liveById.get(p.element)?.minutes ?? 0,
+          multiplier: counted ? (p.element === result.armband ? result.capMult : 1) : 0,
+          captain: p.element === result.armband,
+          vice: Boolean(p.is_vice_captain) && p.element !== result.armband,
+          subbedIn: subbedIn.has(p.element),
+          subbedOut: subbedOut.has(p.element),
+        })
+        const byTypeThenSlot = (a, b) => a.element_type - b.element_type || a.position - b.position
+
+        entries[entryId] = {
+          points: result.points,
+          chip: data.active_chip,
+          transfers: data.entry_history.event_transfers,
+          hit: data.entry_history.event_transfers_cost,
+          squad: {
+            xi: [...result.xi].sort(byTypeThenSlot).map((p) => player(p, true)),
+            bench: result.bench.map((p) => player(p, false)),
+          },
+        }
       }),
     )
 
-    res.status(200).json({ event: event.id, live: Number.isInteger(forced) ? true : !event.finished, entries })
+    res.status(200).json({ event: event.id, live, entries })
   } catch (err) {
     res.status(502).json({ error: 'Failed to reach FPL API' })
   }

@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
 import LiveDot from './LiveDot.jsx'
-import { CHIP_CODES, mergeLive } from './mergeLive.js'
+import TeamSheets from './TeamSheets.jsx'
+import Awards from './Awards.jsx'
+import Countdown from './Countdown.jsx'
+import GwPicker from './GwPicker.jsx'
+import { ManagerCell, RankMove } from './ManagerName.jsx'
+import PlayerOfTheLeague from './PlayerOfTheLeague.jsx'
+import SeasonStats from './SeasonStats.jsx'
+import { CHIP_CODES, CHIP_COLORS } from './chips.js'
+import { buildColorMap } from './managers.js'
+import { mergeLive } from './mergeLive.js'
+import { awards as buildAwards, rankMoves } from './stats.js'
+import { useSquads } from './useSquads.js'
 import summary from './summary.json'
 
 const LEAGUE_ID = 1187651
@@ -11,8 +22,6 @@ const IDLE_POLL_MS = 300_000
 // ?forceEvent=5 previews live mode on a finished gameweek (ignored by the server in production).
 const forcedEvent = new URLSearchParams(window.location.search).get('forceEvent')
 const LIVE_URL = `/api/leagues-classic/${LEAGUE_ID}/live${forcedEvent ? `?forceEvent=${encodeURIComponent(forcedEvent)}` : ''}`
-
-const CHIP_COLORS = { WC: '#0ea5e9', FH: '#f97316', TC: '#a855f7', BB: '#22c55e' }
 
 // Green (highest in column) fading to red (lowest in column).
 function cellStyle(value, { min, max }) {
@@ -30,7 +39,18 @@ function columnStats(values) {
 export default function App() {
   const [base, setBase] = useState(null)
   const [live, setLive] = useState(null)
+  const [meta, setMeta] = useState(null)
   const [error, setError] = useState(null)
+  const [recapGw, setRecapGw] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/meta')
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setMeta)
+      .catch(() => {
+        // Deadline and chip details are optional extras.
+      })
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -54,10 +74,14 @@ export default function App() {
           const history = histories[i]
           const gwPoints = {}
           const transfers = {}
+          const hits = {}
+          const bench = {}
           for (const gw of history.current ?? []) {
             // FPL's `points` is before transfer hits; its running totals are after them.
             gwPoints[gw.event] = gw.points - gw.event_transfers_cost
             transfers[gw.event] = gw.event_transfers
+            hits[gw.event] = gw.event_transfers_cost
+            bench[gw.event] = gw.points_on_bench
             gwSet.add(gw.event)
           }
 
@@ -76,6 +100,8 @@ export default function App() {
             team: entry.entry_name,
             gwPoints,
             transfers,
+            hits,
+            bench,
             chipsByEvent,
             chipsUsed,
             total: entry.total,
@@ -160,6 +186,15 @@ export default function App() {
     return stats
   }, [cumulativeRows, gameweeks])
 
+  const colors = useMemo(() => buildColorMap(rows ?? []), [rows])
+  const moves = useMemo(() => (rows ? rankMoves(rows, gameweeks) : new Map()), [rows, gameweeks])
+  const awardList = useMemo(() => (rows ? buildAwards(rows, gameweeks, moves) : []), [rows, gameweeks, moves])
+  const { squads, failed, allLoaded } = useSquads({ leagueId: LEAGUE_ID, gameweeks, live })
+  const latestGw = gameweeks.at(-1)
+
+  const recaps = summary.recaps
+  const recap = recaps.find((r) => r.gameweek === recapGw) ?? recaps[recaps.length - 1]
+
   const title = `${base?.leagueName || 'FPL Mini-League'} Fantasy Premier League`
 
   return (
@@ -175,8 +210,17 @@ export default function App() {
           ))}
         </span>
       </h1>
-      <h2>Gameweek {summary.gameweek} Recap</h2>
-      {summary.paragraphs.map((text) => (
+      {meta && <Countdown events={meta.events} />}
+      <h2>Gameweek {recap.gameweek} Recap</h2>
+      {recaps.length > 1 && (
+        <GwPicker
+          gameweeks={recaps.map((r) => r.gameweek)}
+          active={recap.gameweek}
+          label="Choose a recap"
+          onSelect={setRecapGw}
+        />
+      )}
+      {recap.paragraphs.map((text) => (
         <p key={text} className="recap">
           {text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
         </p>
@@ -192,7 +236,6 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  <th>Team</th>
                   {gameweeks.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
@@ -205,9 +248,8 @@ export default function App() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.rank}</td>
-                    <td>{row.manager}</td>
-                    <td>{row.team}</td>
+                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
+                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
                     {gameweeks.map((gw) => (
                       <td key={gw} className="num" style={cellStyle(row.gwPoints[gw], gwStats[gw])}>
                         {row.gwPoints[gw] ?? '-'}
@@ -231,7 +273,6 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  <th>Team</th>
                   {gameweeks.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
@@ -244,9 +285,8 @@ export default function App() {
               <tbody>
                 {cumulativeRows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.rank}</td>
-                    <td>{row.manager}</td>
-                    <td>{row.team}</td>
+                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
+                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
                     {gameweeks.map((gw) => (
                       <td key={gw} className="num" style={cellStyle(row.cumulative[gw], cumulativeGwStats[gw])}>
                         {row.cumulative[gw] ?? '-'}
@@ -270,7 +310,6 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  <th>Team</th>
                   {gameweeks.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
@@ -283,9 +322,8 @@ export default function App() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.rank}</td>
-                    <td>{row.manager}</td>
-                    <td>{row.team}</td>
+                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
+                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
                     {gameweeks.map((gw) => {
                       const chip = row.chipsByEvent[gw]
                       return (
@@ -318,7 +356,6 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  <th>Team</th>
                   {gameweeks.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
@@ -331,9 +368,8 @@ export default function App() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.rank}</td>
-                    <td>{row.manager}</td>
-                    <td>{row.team}</td>
+                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
+                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
                     {gameweeks.map((gw) => (
                       <td key={gw} className="num">{row.transfers[gw] ?? '-'}</td>
                     ))}
@@ -348,6 +384,27 @@ export default function App() {
       )}
 
       {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} liveGw={liveGw} />}
+
+      {rows && meta && latestGw && (
+        <SeasonStats rows={rows} gameweeks={gameweeks} chips={meta.chips} event={latestGw} colors={colors} />
+      )}
+
+      {rows && live && (
+        <TeamSheets
+          rows={rows}
+          gameweeks={gameweeks}
+          squads={squads}
+          failed={failed}
+          live={live}
+          liveGw={liveGw}
+          colors={colors}
+          betweenCardsAndOwnership={<Awards awards={awardList} colors={colors} />}
+        />
+      )}
+
+      {rows && live && (
+        <PlayerOfTheLeague squads={squads} gameweeks={gameweeks} rows={rows} colors={colors} allLoaded={allLoaded} />
+      )}
     </>
   )
 }

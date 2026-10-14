@@ -1,4 +1,4 @@
-export const CHIP_CODES = { wildcard: 'WC', freehit: 'FH', '3xc': 'TC', bboost: 'BB' }
+import { CHIP_CODES } from './chips.js'
 
 // Overlays live gameweek points onto the rows built from FPL's official history.
 // While the gameweek is live our computed points win; once it ends, the official
@@ -19,8 +19,10 @@ export function mergeLive(base, live) {
       chipsByEvent[liveEvent] = CHIP_CODES[entry.chip] ?? entry.chip.toUpperCase()
     }
     const transfers = { ...row.transfers, [liveEvent]: entry.transfers }
+    const hits = { ...row.hits, [liveEvent]: entry.hit ?? 0 }
+    const bench = { ...row.bench, [liveEvent]: (entry.squad?.bench ?? []).reduce((sum, p) => sum + p.points, 0) }
     const total = Object.values(gwPoints).reduce((sum, p) => sum + p, 0)
-    return { ...row, gwPoints, chipsByEvent, transfers, total }
+    return { ...row, gwPoints, chipsByEvent, transfers, hits, bench, total }
   })
 
   let rows = merged
