@@ -1,3 +1,5 @@
+import { fplFetch } from '../../_lib/fpl.js'
+
 export default async function handler(req, res) {
   const { id } = req.query
 
@@ -7,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const fplRes = await fetch(`https://fantasy.premierleague.com/api/entry/${id}/history/`)
+    const fplRes = await fplFetch(`https://fantasy.premierleague.com/api/entry/${id}/history/`)
 
     if (!fplRes.ok) {
       res.status(fplRes.status).json({ error: `FPL API returned ${fplRes.status}` })

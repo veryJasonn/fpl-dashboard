@@ -4,6 +4,7 @@ import LiveDot from './LiveDot.jsx'
 import TeamSheets from './TeamSheets.jsx'
 import Awards from './Awards.jsx'
 import Countdown from './Countdown.jsx'
+import { fetchJson } from './fetchJson.js'
 import GwPicker from './GwPicker.jsx'
 import { ManagerCell, RankMove } from './ManagerName.jsx'
 import PlayerOfTheLeague from './PlayerOfTheLeague.jsx'
@@ -51,8 +52,7 @@ export default function App() {
   const [tableTab, setTableTab] = useState('cumulative')
 
   useEffect(() => {
-    fetch('/api/meta')
-      .then((res) => (res.ok ? res.json() : null))
+    fetchJson('/api/meta')
       .then(setMeta)
       .catch(() => {
         // Deadline and chip details are optional extras.
@@ -62,19 +62,10 @@ export default function App() {
   useEffect(() => {
     async function load() {
       try {
-        const standingsRes = await fetch(`/api/leagues-classic/${LEAGUE_ID}/standings`)
-        if (!standingsRes.ok) throw new Error(`Standings request failed: ${standingsRes.status}`)
-        const standingsData = await standingsRes.json()
+        const standingsData = await fetchJson(`/api/leagues-classic/${LEAGUE_ID}/standings`)
         const entries = standingsData.standings?.results ?? []
 
-        const histories = await Promise.all(
-          entries.map((entry) =>
-            fetch(`/api/entry/${entry.entry}/history`).then((res) => {
-              if (!res.ok) throw new Error(`History request failed for entry ${entry.entry}: ${res.status}`)
-              return res.json()
-            }),
-          ),
-        )
+        const histories = await Promise.all(entries.map((entry) => fetchJson(`/api/entry/${entry.entry}/history`)))
 
         const gwSet = new Set()
         const builtRows = entries.map((entry, i) => {
@@ -133,9 +124,7 @@ export default function App() {
     let cancelled = false
     async function loadLive() {
       try {
-        const res = await fetch(LIVE_URL)
-        if (!res.ok) return
-        const data = await res.json()
+        const data = await fetchJson(LIVE_URL)
         if (!cancelled) setLive(data)
       } catch {
         // Live scores are optional; the page works without them.
@@ -232,7 +221,14 @@ export default function App() {
           {text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
         </p>
       ))}
-      {error && <p className="status error">Failed to load data: {error}</p>}
+      {error && (
+        <p className="status error">
+          Couldn&apos;t load the league data ({error}). FPL may be updating.{' '}
+          <button type="button" className="gw-pill" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        </p>
+      )}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}
       {rows && (
         <>

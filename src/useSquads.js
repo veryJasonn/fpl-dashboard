@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { fetchJson } from './fetchJson.js'
 
 const CONCURRENCY = 3
 
@@ -21,9 +22,7 @@ export function useSquads({ leagueId, gameweeks, live }) {
       while (queue.length > 0) {
         const gw = queue.shift()
         try {
-          const res = await fetch(`/api/leagues-classic/${leagueId}/live?event=${gw}`)
-          if (!res.ok) throw new Error(`Request failed: ${res.status}`)
-          const data = await res.json()
+          const data = await fetchJson(`/api/leagues-classic/${leagueId}/live?event=${gw}`)
           setFetched((prev) => ({ ...prev, [gw]: data }))
           setFailed((prev) => ({ ...prev, [gw]: false }))
         } catch {

@@ -1,9 +1,11 @@
+import { fplFetch } from '../../_lib/fpl.js'
+
 const FPL = 'https://fantasy.premierleague.com/api'
 
 const MIN_IN_XI = { 1: 1, 2: 3, 3: 2, 4: 1 } // GK, DEF, MID, FWD
 
 async function fplJson(path) {
-  const res = await fetch(`${FPL}${path}`)
+  const res = await fplFetch(`${FPL}${path}`)
   if (!res.ok) {
     const err = new Error(`FPL API returned ${res.status} for ${path}`)
     err.status = res.status
