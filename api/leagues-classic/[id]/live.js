@@ -1,18 +1,6 @@
-import { fplFetch } from '../../_lib/fpl.js'
-
-const FPL = 'https://fantasy.premierleague.com/api'
+import { cachedFplJson, fplJson } from '../../_lib/fpl.js'
 
 const MIN_IN_XI = { 1: 1, 2: 3, 3: 2, 4: 1 } // GK, DEF, MID, FWD
-
-async function fplJson(path) {
-  const res = await fplFetch(`${FPL}${path}`)
-  if (!res.ok) {
-    const err = new Error(`FPL API returned ${res.status} for ${path}`)
-    err.status = res.status
-    throw err
-  }
-  return res.json()
-}
 
 function validFormation(xi) {
   const counts = { 1: 0, 2: 0, 3: 0, 4: 0 }
@@ -85,7 +73,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const bootstrap = await fplJson('/bootstrap-static/')
+    const bootstrap = await cachedFplJson('/bootstrap-static/')
 
     // Only honoured outside production, to preview live mode on a finished gameweek.
     const forced = process.env.NODE_ENV !== 'production' ? Number(req.query.forceEvent) : NaN
@@ -117,7 +105,7 @@ export default async function handler(req, res) {
     const [liveData, fixtures, standings] = await Promise.all([
       fplJson(`/event/${event.id}/live/`),
       fplJson(`/fixtures/?event=${event.id}`),
-      fplJson(`/leagues-classic/${id}/standings/`),
+      cachedFplJson(`/leagues-classic/${id}/standings/`),
     ])
 
     const liveById = new Map(liveData.elements.map((el) => [el.id, el.stats]))

@@ -1,42 +1,56 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { fetchJson } from './fetchJson.js'
 
 const CONCURRENCY = 3
 
-// Squads for every gameweek: the current one comes from the live poll, past ones are
-// fetched once (newest first) from the same endpoint and cached for the session.
-export function useSquads({ leagueId, gameweeks, live }) {
+// Squads per gameweek. The current gameweek arrives with the live poll; past ones are fetched on demand
+// via request(), once each, from the same endpoint (the server caches finished gameweeks for a day).
+// Nothing is fetched until it's asked for, so a normal page load makes no squad requests at all.
+export function useSquads({ leagueId, live }) {
   const [fetched, setFetched] = useState({})
   const [failed, setFailed] = useState({})
   const requested = useRef(new Set())
+  const queue = useRef([])
+  const running = useRef(0)
   const currentEvent = live?.event ?? null
-  const key = gameweeks.join(',')
+  const currentEventRef = useRef(currentEvent)
+  currentEventRef.current = currentEvent
 
-  useEffect(() => {
-    const queue = [...gameweeks]
-      .sort((a, b) => b - a)
-      .filter((gw) => gw !== currentEvent && !requested.current.has(gw))
-    queue.forEach((gw) => requested.current.add(gw))
-
-    async function worker() {
-      while (queue.length > 0) {
-        const gw = queue.shift()
-        try {
-          const data = await fetchJson(`/api/leagues-classic/${leagueId}/live?event=${gw}`)
+  const pump = useCallback(() => {
+    while (running.current < CONCURRENCY && queue.current.length > 0) {
+      const gw = queue.current.shift()
+      running.current += 1
+      fetchJson(`/api/leagues-classic/${leagueId}/live?event=${gw}`)
+        .then((data) => {
           setFetched((prev) => ({ ...prev, [gw]: data }))
           setFailed((prev) => ({ ...prev, [gw]: false }))
-        } catch {
+        })
+        .catch(() => {
           requested.current.delete(gw)
           setFailed((prev) => ({ ...prev, [gw]: true }))
-        }
-      }
+        })
+        .finally(() => {
+          running.current -= 1
+          pump()
+        })
     }
-    for (let i = 0; i < CONCURRENCY; i += 1) worker()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueId, key, currentEvent])
+  }, [leagueId])
+
+  // urgent requests (a gameweek the user just picked) jump the queue ahead of background loading.
+  const request = useCallback(
+    (gameweeks, { urgent = false } = {}) => {
+      const wanted = [...gameweeks].sort((a, b) => b - a).filter((gw) => gw !== currentEventRef.current && !requested.current.has(gw))
+      wanted.forEach((gw) => requested.current.add(gw))
+      queue.current = urgent ? [...wanted, ...queue.current] : [...queue.current, ...wanted]
+      pump()
+    },
+    [pump],
+  )
 
   const squads = useMemo(() => (currentEvent != null && live ? { ...fetched, [currentEvent]: live } : fetched), [fetched, currentEvent, live])
-  const allLoaded = gameweeks.length > 0 && gameweeks.every((gw) => squads[gw])
 
-  return { squads, failed, allLoaded }
+  // Loaded gameweeks count only once everything the page knows about is in.
+  const isLoaded = useCallback((gameweeks) => gameweeks.length > 0 && gameweeks.every((gw) => squads[gw]), [squads])
+
+  return { squads, failed, request, isLoaded }
 }

@@ -18,3 +18,33 @@ export async function fplFetch(url, { retries = 2, delayMs = 300 } = {}) {
   if (last instanceof Error) throw last
   return last
 }
+
+export const FPL_API = 'https://fantasy.premierleague.com/api'
+
+export async function fplJson(path, options) {
+  const res = await fplFetch(`${FPL_API}${path}`, options)
+  if (!res.ok) {
+    const err = new Error(`FPL API returned ${res.status} for ${path}`)
+    err.status = res.status
+    throw err
+  }
+  return res.json()
+}
+
+// Shares one download between concurrent callers and keeps it for a few minutes on a warm
+// serverless instance, so e.g. the 1.7MB bootstrap-static isn't re-downloaded by every request.
+// Failures are never kept. Disabled outside production so local development always sees fresh data.
+const memo = new Map()
+const MEMO_TTL_MS = process.env.NODE_ENV === 'production' ? 5 * 60_000 : 0
+
+export function cachedFplJson(path) {
+  const hit = memo.get(path)
+  if (hit && Date.now() - hit.at < MEMO_TTL_MS) return hit.promise
+  const promise = fplJson(path)
+  const entry = { promise, at: Date.now() }
+  memo.set(path, entry)
+  promise.catch(() => {
+    if (memo.get(path) === entry) memo.delete(path)
+  })
+  return promise
+}

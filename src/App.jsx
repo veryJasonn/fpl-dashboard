@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
 import LiveDot from './LiveDot.jsx'
 import TeamSheets from './TeamSheets.jsx'
@@ -52,65 +52,46 @@ export default function App() {
   const [tableTab, setTableTab] = useState('cumulative')
 
   useEffect(() => {
-    fetchJson('/api/meta')
-      .then(setMeta)
-      .catch(() => {
-        // Deadline and chip details are optional extras.
-      })
-  }, [])
-
-  useEffect(() => {
     async function load() {
       try {
-        const standingsData = await fetchJson(`/api/leagues-classic/${LEAGUE_ID}/standings`)
-        const entries = standingsData.standings?.results ?? []
-
-        const histories = await Promise.all(entries.map((entry) => fetchJson(`/api/entry/${entry.entry}/history`)))
+        const data = await fetchJson(`/api/leagues-classic/${LEAGUE_ID}/overview`)
 
         const gwSet = new Set()
-        const builtRows = entries.map((entry, i) => {
-          const history = histories[i]
+        const builtRows = data.entries.map((entry) => {
           const gwPoints = {}
           const transfers = {}
           const hits = {}
           const bench = {}
-          for (const gw of history.current ?? []) {
+          for (const gw of entry.gameweeks) {
             // FPL's `points` is before transfer hits; its running totals are after them.
-            gwPoints[gw.event] = gw.points - gw.event_transfers_cost
-            transfers[gw.event] = gw.event_transfers
-            hits[gw.event] = gw.event_transfers_cost
-            bench[gw.event] = gw.points_on_bench
+            gwPoints[gw.event] = gw.points - gw.cost
+            transfers[gw.event] = gw.transfers
+            hits[gw.event] = gw.cost
+            bench[gw.event] = gw.bench
             gwSet.add(gw.event)
           }
 
           const chipsByEvent = {}
-          const chipsUsed = {}
-          for (const chip of history.chips ?? []) {
-            const code = CHIP_CODES[chip.name] ?? chip.name.toUpperCase()
-            chipsByEvent[chip.event] = code
-            chipsUsed[code] = [...(chipsUsed[code] ?? []), chip.event]
+          for (const chip of entry.chips) {
+            chipsByEvent[chip.event] = CHIP_CODES[chip.name] ?? chip.name.toUpperCase()
           }
 
           return {
-            id: entry.entry,
+            id: entry.id,
             rank: entry.rank,
-            manager: entry.player_name,
-            team: entry.entry_name,
+            manager: entry.manager,
+            team: entry.team,
             gwPoints,
             transfers,
             hits,
             bench,
             chipsByEvent,
-            chipsUsed,
             total: entry.total,
           }
         })
 
-        setBase({
-          leagueName: standingsData.league?.name ?? '',
-          gameweeks: [...gwSet],
-          rows: builtRows,
-        })
+        setBase({ leagueName: data.leagueName, gameweeks: [...gwSet], rows: builtRows })
+        setMeta({ events: data.events, chips: data.chips })
       } catch (err) {
         setError(err.message)
       }
@@ -185,8 +166,35 @@ export default function App() {
   const colors = useMemo(() => buildColorMap(rows ?? []), [rows])
   const moves = useMemo(() => (rows ? rankMoves(rows, gameweeks) : new Map()), [rows, gameweeks])
   const awardList = useMemo(() => (rows ? buildAwards(rows, gameweeks, moves) : []), [rows, gameweeks, moves])
-  const { squads, failed, allLoaded } = useSquads({ leagueId: LEAGUE_ID, gameweeks, live })
+  const { squads, failed, request: requestSquads, isLoaded } = useSquads({ leagueId: LEAGUE_ID, live })
+  const allLoaded = isLoaded(gameweeks)
   const latestGw = gameweeks.at(-1)
+
+  // Past gameweeks' squads are only fetched once the team section is about to scroll into view.
+  const [nearTeams, setNearTeams] = useState(false)
+  const teamsMarkerRef = useRef(null)
+  const haveRows = Boolean(rows)
+  useEffect(() => {
+    if (!haveRows || nearTeams) return undefined
+    // Also true when the marker is already above the viewport, so jumping straight down the page counts.
+    const check = () => {
+      const marker = teamsMarkerRef.current
+      if (marker && marker.getBoundingClientRect().top < window.innerHeight + 600) setNearTeams(true)
+    }
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    window.addEventListener('resize', check)
+    return () => {
+      window.removeEventListener('scroll', check)
+      window.removeEventListener('resize', check)
+    }
+  }, [haveRows, nearTeams])
+
+  const gameweeksKey = gameweeks.join(',')
+  useEffect(() => {
+    if (nearTeams) requestSquads(gameweeks)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearTeams, gameweeksKey, requestSquads])
 
   const recaps = summary.recaps
   const recap = recaps.find((r) => r.gameweek === recapGw) ?? recaps[recaps.length - 1]
@@ -401,6 +409,8 @@ export default function App() {
 
       {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} liveGw={liveGw} />}
 
+      {rows && <div ref={teamsMarkerRef} aria-hidden="true" />}
+
       {rows && meta && latestGw && (
         <SeasonStats rows={rows} gameweeks={gameweeks} chips={meta.chips} event={latestGw} colors={colors} />
       )}
@@ -411,6 +421,7 @@ export default function App() {
           gameweeks={gameweeks}
           squads={squads}
           failed={failed}
+          requestSquads={requestSquads}
           live={live}
           liveGw={liveGw}
           colors={colors}

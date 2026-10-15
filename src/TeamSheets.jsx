@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import GwPicker from './GwPicker.jsx'
 import LiveDot from './LiveDot.jsx'
 import { CHIP_CODES, CHIP_COLORS } from './chips.js'
@@ -109,13 +109,18 @@ function Ownership({ data, rows, colors, gw }) {
   )
 }
 
-export default function TeamSheets({ rows, gameweeks, squads, failed, live, liveGw, colors, betweenCardsAndOwnership }) {
+export default function TeamSheets({ rows, gameweeks, squads, failed, requestSquads, live, liveGw, colors, betweenCardsAndOwnership }) {
   const currentEvent = live?.event ?? null
   const [selected, setSelected] = useState(null)
+  const gw = selected ?? currentEvent
+
+  // A gameweek the user just picked is fetched straight away, ahead of any background loading.
+  useEffect(() => {
+    if (gw != null && gw !== currentEvent) requestSquads([gw], { urgent: true })
+  }, [gw, currentEvent, requestSquads])
 
   if (currentEvent == null) return null
 
-  const gw = selected ?? currentEvent
   const isCurrent = gw === currentEvent
   const data = squads[gw]
 

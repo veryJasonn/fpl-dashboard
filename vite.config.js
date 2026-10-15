@@ -1,26 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Dev-only: runs the Vercel serverless function (api/leagues-classic/[id]/standings.js)
-// inside Vite's dev server, so `npm run dev` alone is enough locally. Vercel itself
-// handles /api routing in production — this plugin is never used there.
+// Dev-only: runs the Vercel serverless functions in api/ inside Vite's dev server, so
+// `npm run dev` alone is enough locally. Vercel itself handles /api routing in
+// production — this plugin is never used there.
 function fplApiDevPlugin() {
   const routes = [
     {
-      pattern: /^\/api\/leagues-classic\/(\d+)\/standings\/?$/,
-      modulePath: './api/leagues-classic/[id]/standings.js',
-    },
-    {
-      pattern: /^\/api\/meta\/?$/,
-      modulePath: './api/meta.js',
+      pattern: /^\/api\/leagues-classic\/(\d+)\/overview\/?$/,
+      modulePath: './api/leagues-classic/[id]/overview.js',
     },
     {
       pattern: /^\/api\/leagues-classic\/(\d+)\/live\/?$/,
       modulePath: './api/leagues-classic/[id]/live.js',
-    },
-    {
-      pattern: /^\/api\/entry\/(\d+)\/history\/?$/,
-      modulePath: './api/entry/[id]/history.js',
     },
   ]
 
