@@ -74,29 +74,3 @@ export function awards(rows, gameweeks, moves) {
 
   return list
 }
-
-// Season points each player has scored for the league's teams (counted points only: starters, with captain doubling).
-export function playerOfTheLeague(squads, gameweeks, rows) {
-  const names = new Map(rows.map((r) => [r.id, r.manager]))
-  const byPlayer = new Map()
-  for (const gw of gameweeks) {
-    const data = squads[gw]
-    if (!data) continue
-    for (const [entryId, entry] of Object.entries(data.entries)) {
-      const manager = names.get(Number(entryId)) ?? names.get(entryId)
-      if (!manager || !entry.squad) continue
-      for (const p of entry.squad.xi) {
-        const counted = p.points * p.multiplier
-        const item = byPlayer.get(p.id) ?? { id: p.id, name: p.name, type: p.type, points: 0, appearances: 0, owners: new Set(), best: { points: -Infinity, gw: null } }
-        item.points += counted
-        item.appearances += 1
-        item.owners.add(manager)
-        if (counted > item.best.points) item.best = { points: counted, gw }
-        byPlayer.set(p.id, item)
-      }
-    }
-  }
-  return [...byPlayer.values()]
-    .map((p) => ({ ...p, owners: [...p.owners] }))
-    .sort((a, b) => b.points - a.points || b.appearances - a.appearances || a.name.localeCompare(b.name))
-}

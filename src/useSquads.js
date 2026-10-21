@@ -49,8 +49,5 @@ export function useSquads({ leagueId, live }) {
 
   const squads = useMemo(() => (currentEvent != null && live ? { ...fetched, [currentEvent]: live } : fetched), [fetched, currentEvent, live])
 
-  // Loaded gameweeks count only once everything the page knows about is in.
-  const isLoaded = useCallback((gameweeks) => gameweeks.length > 0 && gameweeks.every((gw) => squads[gw]), [squads])
-
-  return { squads, failed, request, isLoaded }
+  return { squads, failed, request }
 }

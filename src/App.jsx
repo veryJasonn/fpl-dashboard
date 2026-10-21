@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
 import LiveDot from './LiveDot.jsx'
 import TeamSheets from './TeamSheets.jsx'
@@ -7,7 +7,6 @@ import Countdown from './Countdown.jsx'
 import { fetchJson } from './fetchJson.js'
 import GwPicker from './GwPicker.jsx'
 import { ManagerCell, RankMove } from './ManagerName.jsx'
-import PlayerOfTheLeague from './PlayerOfTheLeague.jsx'
 import SeasonStats from './SeasonStats.jsx'
 import { CHIP_CODES, CHIP_COLORS } from './chips.js'
 import { buildColorMap } from './managers.js'
@@ -166,35 +165,8 @@ export default function App() {
   const colors = useMemo(() => buildColorMap(rows ?? []), [rows])
   const moves = useMemo(() => (rows ? rankMoves(rows, gameweeks) : new Map()), [rows, gameweeks])
   const awardList = useMemo(() => (rows ? buildAwards(rows, gameweeks, moves) : []), [rows, gameweeks, moves])
-  const { squads, failed, request: requestSquads, isLoaded } = useSquads({ leagueId: LEAGUE_ID, live })
-  const allLoaded = isLoaded(gameweeks)
+  const { squads, failed, request: requestSquads } = useSquads({ leagueId: LEAGUE_ID, live })
   const latestGw = gameweeks.at(-1)
-
-  // Past gameweeks' squads are only fetched once the team section is about to scroll into view.
-  const [nearTeams, setNearTeams] = useState(false)
-  const teamsMarkerRef = useRef(null)
-  const haveRows = Boolean(rows)
-  useEffect(() => {
-    if (!haveRows || nearTeams) return undefined
-    // Also true when the marker is already above the viewport, so jumping straight down the page counts.
-    const check = () => {
-      const marker = teamsMarkerRef.current
-      if (marker && marker.getBoundingClientRect().top < window.innerHeight + 600) setNearTeams(true)
-    }
-    check()
-    window.addEventListener('scroll', check, { passive: true })
-    window.addEventListener('resize', check)
-    return () => {
-      window.removeEventListener('scroll', check)
-      window.removeEventListener('resize', check)
-    }
-  }, [haveRows, nearTeams])
-
-  const gameweeksKey = gameweeks.join(',')
-  useEffect(() => {
-    if (nearTeams) requestSquads(gameweeks)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearTeams, gameweeksKey, requestSquads])
 
   const recaps = summary.recaps
   const recap = recaps.find((r) => r.gameweek === recapGw) ?? recaps[recaps.length - 1]
@@ -409,8 +381,6 @@ export default function App() {
 
       {cumulativeRows && <VarianceChart rows={cumulativeRows} gameweeks={gameweeks} liveGw={liveGw} />}
 
-      {rows && <div ref={teamsMarkerRef} aria-hidden="true" />}
-
       {rows && meta && latestGw && (
         <SeasonStats rows={rows} gameweeks={gameweeks} chips={meta.chips} event={latestGw} colors={colors} />
       )}
@@ -425,13 +395,10 @@ export default function App() {
           live={live}
           liveGw={liveGw}
           colors={colors}
-          betweenCardsAndOwnership={<Awards awards={awardList} colors={colors} />}
         />
       )}
 
-      {rows && live && (
-        <PlayerOfTheLeague squads={squads} gameweeks={gameweeks} rows={rows} colors={colors} allLoaded={allLoaded} />
-      )}
+      {rows && <Awards awards={awardList} colors={colors} />}
     </>
   )
 }

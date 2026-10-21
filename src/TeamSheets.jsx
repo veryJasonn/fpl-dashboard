@@ -109,7 +109,7 @@ function Ownership({ data, rows, colors, gw }) {
   )
 }
 
-export default function TeamSheets({ rows, gameweeks, squads, failed, requestSquads, live, liveGw, colors, betweenCardsAndOwnership }) {
+export default function TeamSheets({ rows, gameweeks, squads, failed, requestSquads, live, liveGw, colors }) {
   const currentEvent = live?.event ?? null
   const [selected, setSelected] = useState(null)
   const gw = selected ?? currentEvent
@@ -205,7 +205,6 @@ export default function TeamSheets({ rows, gameweeks, squads, failed, requestSqu
           <p className="table-note">
             C captain · V vice-captain · ↑ subbed in · ↓ subbed out · bench points aren&apos;t counted · ×2 means points doubled
           </p>
-          {betweenCardsAndOwnership}
           <Ownership data={data} rows={rows} colors={colors} gw={gw} />
         </>
       )}

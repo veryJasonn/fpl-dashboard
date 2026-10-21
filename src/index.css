@@ -282,49 +282,6 @@ table.season td:last-child {
   vertical-align: middle;
 }
 
-.potl-hero {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 0.9rem 1.1rem;
-  background: linear-gradient(135deg, #2a1f4d, #131c31);
-  border: 1px solid #5b3fa8;
-  border-radius: 10px;
-  box-shadow: 0 0 24px rgba(168, 85, 247, 0.18);
-}
-
-.potl-crown {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 50%;
-  background: #c3a6f7;
-  color: #1a1033;
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.potl-hero > div {
-  flex: 1;
-  min-width: 0;
-}
-
-.potl-name {
-  margin: 0;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.potl-sub {
-  margin: 0.2rem 0 0;
-  color: #cbd5e1;
-  font-size: 0.75rem;
-}
-
 /* Score tables: Rank and Manager (with the team name beneath) are pinned left and the last column
    (Total) is pinned right, so only the gameweek columns in the middle scroll sideways. */
 .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(-n + 2),
@@ -425,11 +382,7 @@ table.season td:last-child {
     background: #0f172a;
   }
 
-  .potl-hero {
-    flex-wrap: wrap;
-  }
-
-  /* Gameweek buttons: one sideways-scrolling row instead of wrapping onto many lines. */
+    /* Gameweek buttons: one sideways-scrolling row instead of wrapping onto many lines. */
   .gw-picker {
     flex-wrap: nowrap;
     overflow-x: auto;
