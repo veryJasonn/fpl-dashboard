@@ -9,11 +9,9 @@ const PAD = { top: 24, right: 24, bottom: 36, left: 52 }
 const PLOT_W = WIDTH - PAD.left - PAD.right
 const PLOT_H = HEIGHT - PAD.top - PAD.bottom
 
-// Gridlines always land on a clean step (5 / 10 / 15 / 20), escalating only
-// once the current step would need more than 8 ticks per side.
-const STEP_OPTIONS = [5, 10, 15, 20]
-function pickStep(maxAbs) {
-  return STEP_OPTIONS.find((step) => maxAbs / step <= 8) ?? STEP_OPTIONS[STEP_OPTIONS.length - 1]
+// Gridlines are always 10 points apart.
+function pickStep() {
+  return 10
 }
 
 const AXIS_LABEL_Y = HEIGHT - PAD.bottom + 20
