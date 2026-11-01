@@ -48,6 +48,7 @@ export default function App() {
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState(null)
   const [recapGw, setRecapGw] = useState(null)
+  const [recapOpen, setRecapOpen] = useState(false)
   const [tableTab, setTableTab] = useState('cumulative')
 
   useEffect(() => {
@@ -196,20 +197,29 @@ export default function App() {
         </span>
       </h1>
       {meta && <Countdown events={meta.events} />}
-      <h2>Gameweek {recap.gameweek} Recap</h2>
-      {recaps.length > 1 && (
-        <GwPicker
-          gameweeks={recaps.map((r) => r.gameweek)}
-          active={recap.gameweek}
-          label="Choose a recap"
-          onSelect={setRecapGw}
-        />
+      <h2>
+        <button type="button" className="recap-toggle" aria-expanded={recapOpen} onClick={() => setRecapOpen((open) => !open)}>
+          Gameweek Recaps
+          <span className="recap-hint">{recapOpen ? 'Click to hide' : 'Click to read'}</span>
+        </button>
+      </h2>
+      {recapOpen && (
+        <>
+          {recaps.length > 1 && (
+            <GwPicker
+              gameweeks={recaps.map((r) => r.gameweek)}
+              active={recap.gameweek}
+              label="Choose a recap"
+              onSelect={setRecapGw}
+            />
+          )}
+          {recap.paragraphs.map((text) => (
+            <p key={text} className="recap">
+              {text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
+            </p>
+          ))}
+        </>
       )}
-      {recap.paragraphs.map((text) => (
-        <p key={text} className="recap">
-          {text.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
-        </p>
-      ))}
       {error && (
         <p className="status error">
           Couldn&apos;t load the league data ({error}). FPL may be updating.{' '}

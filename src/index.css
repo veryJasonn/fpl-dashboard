@@ -75,6 +75,28 @@ h2 {
   color: #cbd5e1;
 }
 
+.recap-toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.recap-hint {
+  color: #c3a6f7;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.recap-toggle:hover .recap-hint {
+  text-decoration: underline;
+}
+
 .recap {
   margin: 0 0 1rem;
   line-height: 1.7;
@@ -136,6 +158,21 @@ h2 {
 .countdown strong {
   color: #c3a6f7;
   font-size: 1.05rem;
+}
+
+.countdown,
+.countdown strong {
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.countdown:hover,
+.countdown:hover strong {
+  color: #f5ecff;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 12px #d8b4fe,
+    0 0 24px #a855f7,
+    0 0 44px #a855f7;
 }
 
 .countdown-date {

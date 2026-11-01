@@ -36,7 +36,7 @@ function PlayerRow({ player }) {
 }
 
 // Who has which players this gameweek: shared picks first, then differentials.
-function Ownership({ data, rows, colors, gw }) {
+function Ownership({ data, rows, colors, gw, picker }) {
   const [showAll, setShowAll] = useState(false)
 
   const players = useMemo(() => {
@@ -61,6 +61,7 @@ function Ownership({ data, rows, colors, gw }) {
   return (
     <>
       <h2>Gameweek {gw} Ownership</h2>
+      {picker}
       <div className="table-scroll">
         <table className="ownership">
           <thead>
@@ -123,6 +124,16 @@ export default function TeamSheets({ rows, gameweeks, squads, failed, requestSqu
 
   const isCurrent = gw === currentEvent
   const data = squads[gw]
+  // The same gameweek buttons appear above the teams and above the ownership table.
+  const picker = (label) => (
+    <GwPicker
+      gameweeks={gameweeks}
+      active={gw}
+      liveGw={liveGw}
+      label={label}
+      onSelect={(g) => setSelected(g === currentEvent ? null : g)}
+    />
+  )
 
   // The league table at that point in the season, not today's, for past gameweeks.
   const totalAt = (row) =>
@@ -145,13 +156,7 @@ export default function TeamSheets({ rows, gameweeks, squads, failed, requestSqu
         Gameweek {gw} Teams
         {gw === liveGw && <LiveDot />}
       </h2>
-      <GwPicker
-        gameweeks={gameweeks}
-        active={gw}
-        liveGw={liveGw}
-        label="Choose a gameweek"
-        onSelect={(g) => setSelected(g === currentEvent ? null : g)}
-      />
+      {picker('Choose a gameweek')}
 
       {!data && !failed[gw] && <p className="status">Loading gameweek {gw} teams…</p>}
       {!data && failed[gw] && <p className="status error">Couldn&apos;t load gameweek {gw}. Pick another gameweek, then come back to retry.</p>}
@@ -205,7 +210,7 @@ export default function TeamSheets({ rows, gameweeks, squads, failed, requestSqu
           <p className="table-note">
             C captain · V vice-captain · ↑ subbed in · ↓ subbed out · bench points aren&apos;t counted · ×2 means points doubled
           </p>
-          <Ownership data={data} rows={rows} colors={colors} gw={gw} />
+          <Ownership data={data} rows={rows} colors={colors} gw={gw} picker={picker('Choose a gameweek for ownership')} />
         </>
       )}
     </>

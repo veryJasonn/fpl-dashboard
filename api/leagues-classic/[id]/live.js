@@ -88,13 +88,18 @@ export default async function handler(req, res) {
     const live = Number.isInteger(forced) ? true : Boolean(event && !event.finished)
     const isPast = Boolean(event && current && event.id < current.id)
 
+    // FPL has checked and finalised this gameweek (bonus points, auto-subs): it will never change again.
+    const final = Boolean(event && isPast && event.data_checked && !live)
+
     res.setHeader(
       'Cache-Control',
       live
         ? 'public, s-maxage=60, stale-while-revalidate=60, stale-if-error=3600'
-        : isPast
-          ? 'public, s-maxage=86400, stale-while-revalidate=86400, stale-if-error=86400'
-          : 'public, s-maxage=600, stale-while-revalidate=600, stale-if-error=3600',
+        : final
+          ? 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400, stale-if-error=604800'
+          : isPast
+            ? 'public, s-maxage=3600, stale-while-revalidate=3600, stale-if-error=86400'
+            : 'public, s-maxage=600, stale-while-revalidate=600, stale-if-error=3600',
     )
 
     if (!event) {
@@ -179,7 +184,7 @@ export default async function handler(req, res) {
       }),
     )
 
-    res.status(200).json({ event: event.id, live, entries })
+    res.status(200).json({ event: event.id, live, final, entries })
   } catch (err) {
     res.status(502).json({ error: 'Failed to reach FPL API' })
   }
