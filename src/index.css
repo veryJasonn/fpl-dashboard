@@ -282,10 +282,9 @@ table.season td:last-child {
   vertical-align: middle;
 }
 
-/* Score tables: Rank and Manager (with the team name beneath) are pinned left and the last column
-   (Total) is pinned right, so only the gameweek columns in the middle scroll sideways. */
-.table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(-n + 2),
-.table-scroll > table:not(.ownership):not(.season) :is(th, td):last-child {
+/* Score tables: Rank and Manager (with the team name beneath) are pinned left; the gameweek columns
+   and Total scroll sideways. */
+.table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(-n + 2) {
   position: sticky;
   z-index: 1;
   box-sizing: border-box;
@@ -304,11 +303,6 @@ table.season td:last-child {
   min-width: 13rem;
   max-width: 13rem;
   box-shadow: 2px 0 0 #334155;
-}
-
-.table-scroll > table:not(.ownership):not(.season) :is(th, td):last-child {
-  right: 0;
-  box-shadow: -2px 0 0 #334155;
 }
 
 .mgr-cell {
@@ -339,37 +333,32 @@ table.season td:last-child {
     padding: 1.25rem 0.75rem;
   }
 
-  /* Keep the chart readable: scroll it sideways instead of shrinking the text. */
-  .chart-scroll {
-    overflow-x: auto;
+  table th,
+  table td {
+    padding: 0.45rem 0.3rem;
   }
 
-  .chart-scroll .chart-wrap {
-    min-width: 560px;
+  table th.num,
+  table td.num {
+    width: 46px;
+    min-width: 46px;
   }
 
-  th,
-  td {
-    padding: 0.45rem 0.35rem;
-  }
-
-  th.num,
-  td.num {
-    width: 52px;
-    min-width: 52px;
-  }
-
-  /* Score tables: narrower pinned columns on phones. */
+  /* Score tables: slimmer pinned columns on phones so more gameweeks fit beside them. */
   .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(1) {
-    width: 3.4rem;
-    min-width: 3.4rem;
+    width: 2.6rem;
+    min-width: 2.6rem;
   }
 
   .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(2) {
-    left: 3.4rem;
-    width: 9.5rem;
-    min-width: 9.5rem;
-    max-width: 9.5rem;
+    left: 2.6rem;
+    width: 6.6rem;
+    min-width: 6.6rem;
+    max-width: 6.6rem;
+  }
+
+  .mgr-team {
+    padding-left: 0;
   }
 
   table.season th:first-child,
@@ -668,6 +657,7 @@ tr:hover td {
   width: 100%;
   height: auto;
   display: block;
+  touch-action: pan-y;
 }
 
 .chart-gridline {

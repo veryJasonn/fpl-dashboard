@@ -162,6 +162,15 @@ export default function App() {
     return stats
   }, [cumulativeRows, gameweeks])
 
+  // On phones the score tables open scrolled to the latest gameweeks (Total stays pinned on the right).
+  const tablesReady = Boolean(rows)
+  useEffect(() => {
+    if (!tablesReady || window.innerWidth > 700) return
+    document.querySelectorAll('.table-scroll > table:not(.ownership):not(.season)').forEach((table) => {
+      table.parentElement.scrollLeft = table.parentElement.scrollWidth
+    })
+  }, [tablesReady, tableTab])
+
   const colors = useMemo(() => buildColorMap(rows ?? []), [rows])
   const moves = useMemo(() => (rows ? rankMoves(rows, gameweeks) : new Map()), [rows, gameweeks])
   const awardList = useMemo(() => (rows ? buildAwards(rows, gameweeks, moves) : []), [rows, gameweeks, moves])
