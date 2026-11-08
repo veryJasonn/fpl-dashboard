@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import VarianceChart from './VarianceChart.jsx'
 import LiveDot from './LiveDot.jsx'
+import LatestScores from './LatestScores.jsx'
 import TeamSheets from './TeamSheets.jsx'
 import Awards from './Awards.jsx'
 import Countdown from './Countdown.jsx'
@@ -197,6 +198,16 @@ export default function App() {
         </span>
       </h1>
       {meta && <Countdown events={meta.events} />}
+      {rows && (
+        <LatestScores
+          rows={rows}
+          gw={latestGw}
+          liveGw={liveGw}
+          colors={colors}
+          squadData={squads[latestGw]}
+          styleFor={(points) => cellStyle(points, gwStats[latestGw] ?? { min: 0, max: 0 })}
+        />
+      )}
       <h2>
         <button type="button" className="recap-toggle" aria-expanded={recapOpen} onClick={() => setRecapOpen((open) => !open)}>
           Gameweek Recaps

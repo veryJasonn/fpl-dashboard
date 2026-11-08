@@ -75,6 +75,71 @@ h2 {
   color: #cbd5e1;
 }
 
+.latest-gw {
+  margin-left: 0.4rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.latest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.latest-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--mgr, #334155);
+  border-radius: 8px;
+  background: #131c31;
+  background: color-mix(in srgb, var(--mgr, #131c31) 22%, #0f172a);
+}
+
+.latest-name {
+  overflow: hidden;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latest-team {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latest-points {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.latest-played {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.6rem;
+  color: #cbd5e1;
+  font-size: 0.7rem;
+}
+
+.latest-card .chip-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  margin: 0;
+}
+
 .recap-toggle {
   display: inline-flex;
   align-items: baseline;
