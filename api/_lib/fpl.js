@@ -31,6 +31,24 @@ export async function fplJson(path, options) {
   return res.json()
 }
 
+// Last successful response per path. If FPL is down or "being updated" we serve this instead of an error,
+// so the page keeps showing the latest data we managed to get. Production only (it lives per warm
+// serverless instance; the edge cache's stale-if-error covers cold instances), so local development
+// still surfaces real failures.
+const lastGood = new Map()
+const KEEP_LAST_GOOD = process.env.NODE_ENV === 'production'
+
+export async function fplJsonOrLast(path, options) {
+  try {
+    const data = await fplJson(path, options)
+    if (KEEP_LAST_GOOD) lastGood.set(path, data)
+    return data
+  } catch (err) {
+    if (lastGood.has(path)) return lastGood.get(path)
+    throw err
+  }
+}
+
 // Shares one download between concurrent callers and keeps it for a few minutes on a warm
 // serverless instance, so e.g. the 1.7MB bootstrap-static isn't re-downloaded by every request.
 // Failures are never kept. Disabled outside production so local development always sees fresh data.
@@ -40,7 +58,7 @@ const MEMO_TTL_MS = process.env.NODE_ENV === 'production' ? 5 * 60_000 : 0
 export function cachedFplJson(path) {
   const hit = memo.get(path)
   if (hit && Date.now() - hit.at < MEMO_TTL_MS) return hit.promise
-  const promise = fplJson(path)
+  const promise = fplJsonOrLast(path)
   const entry = { promise, at: Date.now() }
   memo.set(path, entry)
   promise.catch(() => {

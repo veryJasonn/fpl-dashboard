@@ -1,4 +1,4 @@
-import { cachedFplJson, fplJson } from '../../_lib/fpl.js'
+import { cachedFplJson, fplJsonOrLast } from '../../_lib/fpl.js'
 
 const MIN_IN_XI = { 1: 1, 2: 3, 3: 2, 4: 1 } // GK, DEF, MID, FWD
 
@@ -108,13 +108,14 @@ export default async function handler(req, res) {
     }
 
     const [liveData, fixtures, standings] = await Promise.all([
-      fplJson(`/event/${event.id}/live/`),
-      fplJson(`/fixtures/?event=${event.id}`),
+      fplJsonOrLast(`/event/${event.id}/live/`),
+      fplJsonOrLast(`/fixtures/?event=${event.id}`),
       cachedFplJson(`/leagues-classic/${id}/standings/`),
     ])
 
     const liveById = new Map(liveData.elements.map((el) => [el.id, el.stats]))
     const teamOfElement = new Map(bootstrap.elements.map((el) => [el.id, el.team]))
+    const shortNameOfTeam = new Map(bootstrap.teams.map((t) => [t.id, t.short_name]))
     const nameOfElement = new Map(bootstrap.elements.map((el) => [el.id, el.web_name]))
     const teamDone = new Map(bootstrap.teams.map((t) => [t.id, true]))
     for (const f of fixtures) {
@@ -139,7 +140,7 @@ export default async function handler(req, res) {
       entryIds.map(async (entryId) => {
         let data
         try {
-          data = await fplJson(`/entry/${entryId}/event/${event.id}/picks/`)
+          data = await fplJsonOrLast(`/entry/${entryId}/event/${event.id}/picks/`)
         } catch (err) {
           if (err.status === 404) return
           throw err
@@ -161,6 +162,7 @@ export default async function handler(req, res) {
           id: p.element,
           name: nameOfElement.get(p.element) ?? `#${p.element}`,
           type: p.element_type,
+          team: shortNameOfTeam.get(teamOfElement.get(p.element)) ?? null,
           points: liveById.get(p.element)?.total_points ?? 0,
           minutes: liveById.get(p.element)?.minutes ?? 0,
           multiplier: counted ? (p.element === result.armband ? result.capMult : 1) : 0,

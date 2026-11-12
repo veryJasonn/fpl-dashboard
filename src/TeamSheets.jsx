@@ -22,6 +22,7 @@ function PlayerRow({ player }) {
       <span className="player-pos">{POSITION_LABEL[player.type]}</span>
       <span className="player-name">
         {player.name}
+        {player.team && <span className="player-team">{player.team}</span>}
         {player.captain && <span className="player-badge" title="Captain (armband)">C</span>}
         {player.vice && <span className="player-badge player-badge-vice" title="Vice-captain">V</span>}
         {player.subbedIn && <span className="player-sub player-sub-in" title="Subbed in">↑</span>}
@@ -46,7 +47,7 @@ function Ownership({ data, rows, colors, gw, picker }) {
       if (!squad) continue
       for (const [group, list] of [['xi', squad.xi], ['bench', squad.bench]]) {
         for (const p of list) {
-          const entry = byId.get(p.id) ?? { id: p.id, name: p.name, type: p.type, points: p.points, owners: [] }
+          const entry = byId.get(p.id) ?? { id: p.id, name: p.name, type: p.type, team: p.team, points: p.points, owners: [] }
           entry.owners.push({ manager: row.manager, inXi: group === 'xi', captain: p.captain })
           byId.set(p.id, entry)
         }
@@ -77,6 +78,7 @@ function Ownership({ data, rows, colors, gw, picker }) {
               <tr key={p.id}>
                 <td>
                   <span className="player-pos">{POSITION_LABEL[p.type]}</span> {p.name}
+                  {p.team && <span className="player-team">{p.team}</span>}
                   {p.owners.length === 1 && <span className="tag-diff">differential</span>}
                 </td>
                 <td>

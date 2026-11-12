@@ -1,4 +1,4 @@
-import { cachedFplJson, fplJson } from '../../_lib/fpl.js'
+import { cachedFplJson, fplJsonOrLast } from '../../_lib/fpl.js'
 
 // Everything the page needs to start: league standings, every manager's gameweek history and chips,
 // plus gameweek deadlines and chip windows. One request instead of ~8, trimmed to the fields the page uses.
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       cachedFplJson('/bootstrap-static/'),
     ])
     const entries = standings.standings.results
-    const histories = await Promise.all(entries.map((e) => fplJson(`/entry/${e.entry}/history/`)))
+    const histories = await Promise.all(entries.map((e) => fplJsonOrLast(`/entry/${e.entry}/history/`)))
 
     // Cache at the edge so repeat page loads don't hit FPL, and keep serving the last good copy
     // for a day if FPL's API starts erroring.

@@ -448,15 +448,15 @@ table.season td:last-child {
 
   /* Score tables: slimmer pinned columns on phones so more gameweeks fit beside them. */
   .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(1) {
-    width: 2.6rem;
-    min-width: 2.6rem;
+    width: 2.4rem;
+    min-width: 2.4rem;
   }
 
   .table-scroll > table:not(.ownership):not(.season) :is(th, td):nth-child(2) {
-    left: 2.6rem;
-    width: 6.6rem;
-    min-width: 6.6rem;
-    max-width: 6.6rem;
+    left: 2.4rem;
+    width: 5.4rem;
+    min-width: 5.4rem;
+    max-width: 5.4rem;
   }
 
   .mgr-team {
@@ -576,6 +576,13 @@ table.season td:last-child {
 .player-pos {
   color: #64748b;
   font-size: 0.65rem;
+}
+
+.player-team {
+  margin-left: 0.4rem;
+  color: #64748b;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
 }
 
 .player-name {
@@ -706,6 +713,11 @@ tr:hover td {
 .status {
   padding: 2rem 0;
   color: #94a3b8;
+}
+
+.status.saved-note {
+  padding: 0.5rem 0;
+  font-size: 0.8rem;
 }
 
 .status.error {
@@ -852,4 +864,30 @@ tr:hover td {
   height: 3px;
   border-radius: 2px;
   display: inline-block;
+}
+
+.table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.table-pager .gw-pill {
+  min-width: 2.2rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.table-pager .gw-pill:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.table-pager .gw-pill:disabled:hover {
+  border-color: #334155;
 }

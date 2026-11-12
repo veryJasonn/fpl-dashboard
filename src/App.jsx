@@ -19,10 +19,35 @@ import summary from './summary.json'
 const LEAGUE_ID = 1187651
 
 const TABLE_TABS = [
+  ['gameweek', 'Gameweek Scores'],
   ['cumulative', 'Cumulative Scores'],
   ['chips', 'Chips Used'],
   ['transfers', 'Transfers Made'],
 ]
+
+// The last good responses are kept in localStorage so the page still shows data when FPL is being updated.
+const OVERVIEW_KEY = `fpl-overview:v1:${LEAGUE_ID}`
+const LIVE_KEY = `fpl-live:v1:${LEAGUE_ID}`
+const PAGE_SIZE = 8
+const PAGE_SIZE_NARROW = 3
+const SAVED_RETRY_DELAYS_MS = [30_000, 60_000, 120_000, 300_000]
+
+function readLocal(key) {
+  try {
+    const raw = window.localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function saveLocal(key, data) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data))
+  } catch {
+    // Storage full or unavailable: the page just won't have a fallback copy.
+  }
+}
 
 const LIVE_POLL_MS = 60_000
 const IDLE_POLL_MS = 300_000
@@ -43,19 +68,51 @@ function columnStats(values) {
   return { min: Math.min(...nums), max: Math.max(...nums) }
 }
 
+function useNarrowScreen() {
+  const query = '(max-width: 700px)'
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const update = () => setNarrow(media.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return narrow
+}
+
 export default function App() {
   const [base, setBase] = useState(null)
   const [live, setLive] = useState(null)
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState(null)
+  const [savedCopy, setSavedCopy] = useState(false)
   const [recapGw, setRecapGw] = useState(null)
   const [recapOpen, setRecapOpen] = useState(false)
-  const [tableTab, setTableTab] = useState('cumulative')
+  const [tableTab, setTableTab] = useState('gameweek')
 
   useEffect(() => {
+    let cancelled = false
+    let retryTimer
+    let failures = 0
+
     async function load() {
       try {
-        const data = await fetchJson(`/api/leagues-classic/${LEAGUE_ID}/overview`)
+        let data
+        try {
+          data = await fetchJson(`/api/leagues-classic/${LEAGUE_ID}/overview`)
+          saveLocal(OVERVIEW_KEY, data)
+          if (!cancelled) setSavedCopy(false)
+        } catch (err) {
+          // FPL is down or being updated: show the last copy we saved and keep trying in the background.
+          data = readLocal(OVERVIEW_KEY)
+          if (!data) throw err
+          if (!cancelled) setSavedCopy(true)
+          // Back off (30s, 1m, 2m, then every 5m) so an FPL outage isn't hammered by every open tab.
+          retryTimer = setTimeout(load, SAVED_RETRY_DELAYS_MS[Math.min(failures, SAVED_RETRY_DELAYS_MS.length - 1)])
+          failures += 1
+        }
+        if (cancelled) return
+        setError(null)
 
         const gwSet = new Set()
         const builtRows = data.entries.map((entry) => {
@@ -99,6 +156,10 @@ export default function App() {
     }
 
     load()
+    return () => {
+      cancelled = true
+      clearTimeout(retryTimer)
+    }
   }, [])
 
   const isLive = Boolean(live?.live)
@@ -107,9 +168,12 @@ export default function App() {
     async function loadLive() {
       try {
         const data = await fetchJson(LIVE_URL)
+        saveLocal(LIVE_KEY, data)
         if (!cancelled) setLive(data)
       } catch {
-        // Live scores are optional; the page works without them.
+        // Live scores are optional; on a failed first load fall back to the last copy we saved.
+        const saved = readLocal(LIVE_KEY)
+        if (saved && !cancelled) setLive((current) => current ?? saved)
       }
     }
 
@@ -164,14 +228,16 @@ export default function App() {
     return stats
   }, [cumulativeRows, gameweeks])
 
-  // On phones the score tables open scrolled to the latest gameweeks (Total stays pinned on the right).
-  const tablesReady = Boolean(rows)
-  useEffect(() => {
-    if (!tablesReady || window.innerWidth > 700) return
-    document.querySelectorAll('.table-scroll > table:not(.ownership):not(.season)').forEach((table) => {
-      table.parentElement.scrollLeft = table.parentElement.scrollWidth
-    })
-  }, [tablesReady, tableTab])
+  // The score tables show one page of gameweeks (the latest by default) with arrows to page back and
+  // forward, so they never scroll sideways. Phones have room for fewer columns.
+  const narrow = useNarrowScreen()
+  const pageSize = narrow ? PAGE_SIZE_NARROW : PAGE_SIZE
+  const [pageOffset, setPageOffset] = useState(0)
+  const pageEnd = Math.min(gameweeks.length, Math.max(Math.min(pageSize, gameweeks.length), gameweeks.length - pageOffset))
+  const pageStart = Math.max(0, pageEnd - pageSize)
+  const shownGws = gameweeks.slice(pageStart, pageEnd)
+  const pageOlder = () => setPageOffset(gameweeks.length - pageEnd + 1)
+  const pageNewer = () => setPageOffset(Math.max(0, gameweeks.length - pageEnd - 1))
 
   const colors = useMemo(() => buildColorMap(rows ?? []), [rows])
   const moves = useMemo(() => (rows ? rankMoves(rows, gameweeks) : new Map()), [rows, gameweeks])
@@ -231,6 +297,9 @@ export default function App() {
           ))}
         </>
       )}
+      {savedCopy && (
+        <p className="status saved-note">FPL is updating right now, so this is the last data we could get. It will refresh by itself.</p>
+      )}
       {error && (
         <p className="status error">
           Couldn&apos;t load the league data ({error}). FPL may be updating.{' '}
@@ -240,43 +309,6 @@ export default function App() {
         </p>
       )}
       {!error && !rows && <p className="status">Loading gameweek scores…</p>}
-      {rows && (
-        <>
-          <h2>Gameweek Scores</h2>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Manager</th>
-                  {gameweeks.map((gw) => (
-                    <th key={gw} className="num">
-                      GW{gw}
-                      {gw === liveGw && <LiveDot />}
-                    </th>
-                  ))}
-                  <th className="num">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
-                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
-                    {gameweeks.map((gw) => (
-                      <td key={gw} className="num" style={cellStyle(row.gwPoints[gw], gwStats[gw])}>
-                        {row.gwPoints[gw] ?? '-'}
-                      </td>
-                    ))}
-                    <td className="num" style={cellStyle(row.total, totalStats)}>{row.total}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
       {rows && (
         <div className="gw-picker table-tabs" role="group" aria-label="Choose a table">
           {TABLE_TABS.map(([key, label]) => (
@@ -293,6 +325,57 @@ export default function App() {
         </div>
       )}
 
+      {rows && shownGws.length > 0 && (
+        <div className="table-pager">
+          <button type="button" className="gw-pill" onClick={pageOlder} disabled={pageStart === 0} aria-label="Earlier gameweeks">
+            ‹
+          </button>
+          <span className="table-pager-range">
+            GW{shownGws[0]}
+            {shownGws.length > 1 && `–GW${shownGws.at(-1)}`}
+          </span>
+          <button type="button" className="gw-pill" onClick={pageNewer} disabled={pageEnd === gameweeks.length} aria-label="Later gameweeks">
+            ›
+          </button>
+        </div>
+      )}
+
+      {rows && tableTab === 'gameweek' && (
+        <>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Manager</th>
+                  {shownGws.map((gw) => (
+                    <th key={gw} className="num">
+                      GW{gw}
+                      {gw === liveGw && <LiveDot />}
+                    </th>
+                  ))}
+                  <th className="num">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
+                    <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
+                    {shownGws.map((gw) => (
+                      <td key={gw} className="num" style={cellStyle(row.gwPoints[gw], gwStats[gw])}>
+                        {row.gwPoints[gw] ?? '-'}
+                      </td>
+                    ))}
+                    <td className="num" style={cellStyle(row.total, totalStats)}>{row.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       {cumulativeRows && tableTab === 'cumulative' && (
         <>
           <div className="table-scroll">
@@ -301,7 +384,7 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  {gameweeks.map((gw) => (
+                  {shownGws.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
                       {gw === liveGw && <LiveDot />}
@@ -315,7 +398,7 @@ export default function App() {
                   <tr key={row.id}>
                     <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
                     <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
-                    {gameweeks.map((gw) => (
+                    {shownGws.map((gw) => (
                       <td key={gw} className="num" style={cellStyle(row.cumulative[gw], cumulativeGwStats[gw])}>
                         {row.cumulative[gw] ?? '-'}
                       </td>
@@ -337,7 +420,7 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  {gameweeks.map((gw) => (
+                  {shownGws.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
                       {gw === liveGw && <LiveDot />}
@@ -351,7 +434,7 @@ export default function App() {
                   <tr key={row.id}>
                     <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
                     <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
-                    {gameweeks.map((gw) => {
+                    {shownGws.map((gw) => {
                       const chip = row.chipsByEvent[gw]
                       return (
                         <td key={gw} className="num">
@@ -382,7 +465,7 @@ export default function App() {
                 <tr>
                   <th>Rank</th>
                   <th>Manager</th>
-                  {gameweeks.map((gw) => (
+                  {shownGws.map((gw) => (
                     <th key={gw} className="num">
                       GW{gw}
                       {gw === liveGw && <LiveDot />}
@@ -396,7 +479,7 @@ export default function App() {
                   <tr key={row.id}>
                     <td>{row.rank}<RankMove move={moves.get(row.id)} /></td>
                     <td><ManagerCell name={row.manager} team={row.team} color={colors.get(row.manager)} /></td>
-                    {gameweeks.map((gw) => (
+                    {shownGws.map((gw) => (
                       <td key={gw} className="num">{row.transfers[gw] ?? '-'}</td>
                     ))}
                     <td className="num"></td>

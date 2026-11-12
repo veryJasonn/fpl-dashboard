@@ -5,7 +5,7 @@ const CONCURRENCY = 3
 
 // Finalised gameweeks never change, so they are kept in localStorage and only ever downloaded once per
 // device. Bump the version if the squad shape changes.
-const storageKey = (leagueId, gw) => `fpl-squad:v1:${leagueId}:${gw}`
+const storageKey = (leagueId, gw) => `fpl-squad:v2:${leagueId}:${gw}`
 
 function readStored(leagueId, gw) {
   try {
@@ -46,7 +46,7 @@ export function useSquads({ leagueId, live }) {
         continue
       }
       running.current += 1
-      fetchJson(`/api/leagues-classic/${leagueId}/live?event=${gw}`)
+      fetchJson(`/api/leagues-classic/${leagueId}/live?event=${gw}&v=2`)
         .then((data) => {
           if (data.final) writeStored(leagueId, gw, data)
           setFetched((prev) => ({ ...prev, [gw]: data }))
